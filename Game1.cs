@@ -103,7 +103,7 @@ namespace RoboRoute
                 (winW - VirtualWidth * scale) / 2,    // center it, leaving black bars
                 (winH - VirtualHeight * scale) / 2,
                 VirtualWidth * scale,
-                VirtualHeight * scale);
+                VirtualHeight * scale);         
 
             _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
             _spriteBatch.Draw(_renderTarget, dest, Color.White);
