@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
@@ -28,10 +28,12 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="RoboRoute\Content\" />
-    <Folder Include="RoboRoute\Core\" />
     <Folder Include="RoboRoute\Commands\" />
     <Folder Include="RoboRoute\Screens\" />
     <Folder Include="RoboRoute\UI\" />
     <Folder Include="RoboRoute\Systems\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MonoGameLibrary\MonoGameLibrary.csproj" />
   </ItemGroup>
 </Project>
