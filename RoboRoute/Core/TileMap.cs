@@ -9,7 +9,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace RoboRoute.RoboRoute.Core
 {
-    public class TileMap
+    public class LevelTileMap
     {
         public const int TileSize = 24;
 
@@ -23,7 +23,7 @@ namespace RoboRoute.RoboRoute.Core
         public int Width => _tiles.GetLength(1);
         public int Height => _tiles.GetLength(0);
 
-        public TileMap(int[,] tiles, Texture2D floorTexture, Texture2D wallTexture)
+        public LevelTileMap(int[,] tiles, Texture2D floorTexture, Texture2D wallTexture)
         {
             _tiles = tiles;
             _textures = new Texture2D[2];
