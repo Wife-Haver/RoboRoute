@@ -29,7 +29,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="RoboRoute\Content\" />
-    <Folder Include="RoboRoute\Commands\" />
     <Folder Include="RoboRoute\Screens\" />
     <Folder Include="RoboRoute\UI\" />
     <Folder Include="RoboRoute\Systems\" />
