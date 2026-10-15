@@ -32,49 +32,92 @@ namespace RoboRoute.RoboRoute.Core
 
         private Texture2D _texture;
 
+        /// <summary>True while the robot is still animating a move or a turn.</summary>
+        public bool IsBusy => _isMoving || _isTurning;
+
         public Robot(Texture2D texture, Point startTile)
         {
             _texture = texture;
+            Reset(startTile);
+        }
+
+        /// <summary>Puts the robot back on a tile, facing up, with no animation in progress.</summary>
+        public void Reset(Point startTile)
+        {
             TilePos = _targetTile = startTile;
             _pixelPos = TileToPixel(startTile);
+            _facing = 0;
+            _angle = _targetAngle = 0f;
+            _isMoving = false;
+            _isTurning = false;
         }
 
         private static Vector2 TileToPixel(Point tile) =>
             new Vector2(tile.X * TileSize, tile.Y * TileSize);
 
-        public void Update(GameTime gameTime, KeyboardState kb, Func<Point, bool> isWalkable)
+        // ------------------------------------------------------------------
+        //  Commands (used by the code blocks). Only call these when !IsBusy.
+        // ------------------------------------------------------------------
+
+        public void TurnLeft()
+        {
+            _facing = (_facing + 3) % 4;            // counter-clockwise
+            _targetAngle -= MathHelper.PiOver2;
+            _isTurning = true;
+        }
+
+        public void TurnRight()
+        {
+            _facing = (_facing + 1) % 4;            // clockwise
+            _targetAngle += MathHelper.PiOver2;
+            _isTurning = true;
+        }
+
+        /// <summary>Moves one tile in the facing direction. Returns false if something is in the way.</summary>
+        public bool MoveForward(Func<Point, bool> isWalkable)
+        {
+            return TryMove(_facing, isWalkable);
+        }
+
+        private bool TryMove(int directionIndex, Func<Point, bool> isWalkable)
+        {
+            Point dir = Directions[directionIndex];
+            Point next = new Point(TilePos.X + dir.X, TilePos.Y + dir.Y);
+
+            if (!isWalkable(next))
+                return false;
+
+            _targetTile = next;
+            _isMoving = true;
+            return true;
+        }
+
+        // ------------------------------------------------------------------
+        //  Optional manual control (handy for testing the level)
+        // ------------------------------------------------------------------
+
+        public void HandleKeyboard(KeyboardState kb, Func<Point, bool> isWalkable)
+        {
+            // Only accept new input when idle (not mid-move, not mid-turn)
+            if (IsBusy) return;
+
+            if (kb.IsKeyDown(Keys.Left))
+                TurnLeft();
+            else if (kb.IsKeyDown(Keys.Right))
+                TurnRight();
+            else if (kb.IsKeyDown(Keys.Up))
+                TryMove(_facing, isWalkable);
+            else if (kb.IsKeyDown(Keys.Down))
+                TryMove((_facing + 2) % 4, isWalkable);   // backward = opposite of facing
+        }
+
+        // ------------------------------------------------------------------
+        //  Animation
+        // ------------------------------------------------------------------
+
+        public void Update(GameTime gameTime)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-            // Only accept new input when idle (not mid-move, not mid-turn)
-            if (!_isMoving && !_isTurning)
-            {
-                if (kb.IsKeyDown(Keys.Left))
-                {
-                    _facing = (_facing + 3) % 4;            // turn counter-clockwise
-                    _targetAngle -= MathHelper.PiOver2;
-                    _isTurning = true;
-                }
-                else if (kb.IsKeyDown(Keys.Right))
-                {
-                    _facing = (_facing + 1) % 4;            // turn clockwise
-                    _targetAngle += MathHelper.PiOver2;
-                    _isTurning = true;
-                }
-                else if (kb.IsKeyDown(Keys.Up) || kb.IsKeyDown(Keys.Down))
-                {
-                    // Forward uses the facing direction, backward uses the opposite
-                    int moveDir = kb.IsKeyDown(Keys.Up) ? _facing : (_facing + 2) % 4;
-                    Point dir = Directions[moveDir];
-                    Point next = new Point(TilePos.X + dir.X, TilePos.Y + dir.Y);
-
-                    if (isWalkable(next))
-                    {
-                        _targetTile = next;
-                        _isMoving = true;
-                    }
-                }
-            }
 
             // Animate turning
             if (_isTurning)

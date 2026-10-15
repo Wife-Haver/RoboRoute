@@ -19,6 +19,8 @@ namespace RoboRoute
         private LevelTileMap _LevelTileMap;
 
         private Robot robot;
+        private static readonly Point RobotStartTile = new Point(1, 1);
+
         private const int VirtualWidth = 320;   // game's internal resolution
         private const int VirtualHeight = 180;  // (16:9, fits ~13x7 tiles of 24px)
         private RenderTarget2D _renderTarget;
@@ -46,6 +48,11 @@ namespace RoboRoute
         private const int BlockHeight = 40;
         private const int BlockGap = 8;
 
+        // Bottom of the middle panel: status line + Run button
+        private const int ButtonHeight = 44;
+        private const int StatusHeight = 24;
+        private const int FooterHeight = ButtonHeight + StatusHeight + Margin * 2;
+
         // The blocks available in the right panel (unlimited supply of each)
         private readonly BlockType[] _palette =
         {
@@ -64,6 +71,13 @@ namespace RoboRoute
 
         private MouseState _prevMouse;
         private Point _mousePos;        // window coordinates
+
+        // ---- Running the program ----
+        private bool _isRunning;
+        private int _nextStep;          // index of the next block to execute
+        private int _activeStep = -1;   // block currently executing (highlighted), -1 = none
+        private string _status = "";
+        private Color _statusColor = Color.White;
 
         public Game1()
         {
@@ -126,7 +140,7 @@ namespace RoboRoute
 
             _font = Content.Load<SpriteFont>("Font");
 
-            robot = new Robot(Content.Load<Texture2D>("RobotProto"), new Point(1, 1));
+            robot = new Robot(Content.Load<Texture2D>("RobotProto"), RobotStartTile);
 
             UpdateViewports();
         }
@@ -148,13 +162,19 @@ namespace RoboRoute
             if (kb.IsKeyDown(Keys.OemComma)) { _middleShare -= 0.5f * dt; UpdateViewports(); }
             if (kb.IsKeyDown(Keys.OemPeriod)) { _middleShare += 0.5f * dt; UpdateViewports(); }
 
-            // Mouse + drag and drop
+            // Mouse + drag and drop + Run button
             var mouse = Mouse.GetState();
             _mousePos = mouse.Position;
             UpdateDragAndDrop(mouse);
             _prevMouse = mouse;
 
-            robot.Update(gameTime, kb, _LevelTileMap.IsWalkable);
+            // Manual arrow-key control, only while no program is running.
+            // Delete this line once you don't want the player moving the robot directly.
+            if (!_isRunning)
+                robot.HandleKeyboard(kb, _LevelTileMap.IsWalkable);
+
+            robot.Update(gameTime);
+            UpdateProgram();
 
             base.Update(gameTime);
         }
@@ -186,12 +206,25 @@ namespace RoboRoute
                 BlockHeight);
         }
 
-        // How many blocks fit in the middle panel
+        // The Run/Stop button, pinned to the bottom of the middle panel
+        private Rectangle RunButtonRect
+        {
+            get
+            {
+                return new Rectangle(
+                    Margin,
+                    _middleViewport.Height - Margin - ButtonHeight,
+                    _middleViewport.Width - Margin * 2,
+                    ButtonHeight);
+            }
+        }
+
+        // How many blocks fit in the middle panel (above the footer)
         private int QueueCapacity
         {
             get
             {
-                int available = _middleViewport.Height - HeaderHeight - Margin;
+                int available = _middleViewport.Height - HeaderHeight - FooterHeight;
                 return Math.Max(0, (available + BlockGap) / (BlockHeight + BlockGap));
             }
         }
@@ -208,7 +241,7 @@ namespace RoboRoute
         }
 
         // ------------------------------------------------------------------
-        //  Drag and drop
+        //  Drag and drop + Run button clicks
         // ------------------------------------------------------------------
 
         private void UpdateDragAndDrop(MouseState mouse)
@@ -217,10 +250,27 @@ namespace RoboRoute
             bool released = mouse.LeftButton == ButtonState.Released && _prevMouse.LeftButton == ButtonState.Pressed;
 
             if (pressed && !_dragging)
-                TryStartDrag(mouse.Position);
+            {
+                // Button first; otherwise try to pick up a block (not allowed while the program runs)
+                if (!TryClickRunButton(mouse.Position) && !_isRunning)
+                    TryStartDrag(mouse.Position);
+            }
 
             if (released && _dragging)
                 DropBlock(mouse.Position);
+        }
+
+        private bool TryClickRunButton(Point pos)
+        {
+            if (!_middleViewport.Bounds.Contains(pos)) return false;
+            if (!RunButtonRect.Contains(ToLocal(pos, _middleViewport))) return false;
+
+            if (_isRunning)
+                StopProgram();
+            else if (_queue.Count > 0)
+                StartProgram();
+
+            return true;
         }
 
         private void TryStartDrag(Point pos)
@@ -263,6 +313,7 @@ namespace RoboRoute
             _dragType = type;
             _dragGrabOffset = new Point(localMouse.X - slot.X, localMouse.Y - slot.Y);
             _dragSize = new Point(slot.Width, slot.Height);
+            _status = "";   // the old result no longer applies once the program is being edited
         }
 
         private void DropBlock(Point pos)
@@ -275,6 +326,69 @@ namespace RoboRoute
                 _queue.Insert(index, _dragType);
             }
             // Dropped anywhere else (or the queue is full): the block is discarded
+        }
+
+        // ------------------------------------------------------------------
+        //  Running the program
+        // ------------------------------------------------------------------
+
+        private void StartProgram()
+        {
+            robot.Reset(RobotStartTile);   // always start from the beginning
+            _isRunning = true;
+            _nextStep = 0;
+            _activeStep = -1;
+            _status = "Running...";
+            _statusColor = Color.White;
+        }
+
+        private void StopProgram()
+        {
+            robot.Reset(RobotStartTile);
+            _isRunning = false;
+            _activeStep = -1;
+            _status = "Stopped";
+            _statusColor = Color.LightGray;
+        }
+
+        private void FinishProgram(string message, Color color)
+        {
+            _isRunning = false;
+            _activeStep = -1;
+            _status = message;
+            _statusColor = color;
+        }
+
+        // Runs one block at a time: the next block starts only when the robot has finished the last one
+        private void UpdateProgram()
+        {
+            if (!_isRunning || robot.IsBusy) return;
+
+            if (_nextStep >= _queue.Count)
+            {
+                FinishProgram("Program finished!", new Color(120, 220, 140));
+                return;
+            }
+
+            _activeStep = _nextStep;
+            BlockType block = _queue[_nextStep];
+            _nextStep++;
+
+            switch (block)
+            {
+                case BlockType.MoveForward:
+                    if (!robot.MoveForward(_LevelTileMap.IsWalkable))
+                        FinishProgram("Blocked by a wall at step " + (_activeStep + 1), new Color(255, 120, 120));
+                    break;
+
+                case BlockType.TurnLeft:
+                    robot.TurnLeft();
+                    break;
+
+                case BlockType.TurnRight:
+                    robot.TurnRight();
+                    break;
+            }
         }
 
         // ------------------------------------------------------------------
@@ -372,9 +486,14 @@ namespace RoboRoute
             for (int i = 0; i < QueueCapacity; i++)
                 DrawBorder(sb, QueueSlot(i), 1, new Color(60, 60, 75));
 
-            // The blocks in the queue
+            // The blocks in the queue (the one being executed gets a yellow outline)
             for (int i = 0; i < _queue.Count; i++)
+            {
                 DrawBlock(sb, QueueSlot(i), _queue[i]);
+
+                if (_isRunning && i == _activeStep)
+                    DrawBorder(sb, QueueSlot(i), 4, Color.Yellow);
+            }
 
             // Yellow line showing where the dragged block will land
             if (_dragging && _middleViewport.Bounds.Contains(_mousePos) && _queue.Count < QueueCapacity)
@@ -383,6 +502,54 @@ namespace RoboRoute
                 Rectangle slot = QueueSlot(index);
                 sb.Draw(_pixel, new Rectangle(Margin, slot.Y - BlockGap / 2 - 1, slot.Width, 3), Color.Yellow);
             }
+
+            // Footer: status line, then the Run/Stop button
+            if (_status.Length > 0)
+            {
+                Rectangle statusArea = new Rectangle(
+                    Margin,
+                    RunButtonRect.Y - StatusHeight,
+                    _middleViewport.Width - Margin * 2,
+                    StatusHeight);
+                DrawFittedText(sb, _status, statusArea, _statusColor, false);
+            }
+
+            DrawRunButton(sb);
+        }
+
+        private void DrawRunButton(SpriteBatch sb)
+        {
+            Rectangle r = RunButtonRect;
+            bool hover = !_dragging
+                         && _middleViewport.Bounds.Contains(_mousePos)
+                         && r.Contains(ToLocal(_mousePos, _middleViewport));
+
+            string label;
+            Color color;
+
+            if (_isRunning)
+            {
+                label = "STOP";
+                color = new Color(170, 55, 55);
+            }
+            else if (_queue.Count == 0)
+            {
+                label = "RUN";
+                color = new Color(70, 70, 80);   // greyed out: nothing to run
+                hover = false;
+            }
+            else
+            {
+                label = "RUN";
+                color = new Color(46, 140, 80);
+            }
+
+            if (hover)
+                color = Color.Lerp(color, Color.White, 0.2f);
+
+            sb.Draw(_pixel, r, color);
+            DrawBorder(sb, r, 2, Color.White);
+            DrawFittedText(sb, label, r, Color.White, true);
         }
 
         private void DrawRightPanel(SpriteBatch sb)
@@ -404,16 +571,19 @@ namespace RoboRoute
         {
             sb.Draw(_pixel, r, BlockInfo.GetColor(type) * alpha);
             DrawBorder(sb, r, 2, Color.White * alpha);
+            DrawFittedText(sb, BlockInfo.GetLabel(type), r, Color.White * alpha, true);
+        }
 
-            string label = BlockInfo.GetLabel(type);
-            Vector2 size = _font.MeasureString(label);
-            float textScale = Math.Min(1f, (r.Width - 12) / size.X);
+        // Draws text inside an area, shrinking it if it's too wide. Centred, or left-aligned.
+        private void DrawFittedText(SpriteBatch sb, string text, Rectangle area, Color color, bool center)
+        {
+            Vector2 size = _font.MeasureString(text);
+            float textScale = Math.Min(1f, (area.Width - (center ? 12 : 0)) / size.X);
 
-            Vector2 pos = new Vector2(
-                r.X + (r.Width - size.X * textScale) / 2f,
-                r.Y + (r.Height - size.Y * textScale) / 2f);
+            float x = center ? area.X + (area.Width - size.X * textScale) / 2f : area.X;
+            float y = area.Y + (area.Height - size.Y * textScale) / 2f;
 
-            sb.DrawString(_font, label, pos, Color.White * alpha, 0f, Vector2.Zero, textScale, SpriteEffects.None, 0f);
+            sb.DrawString(_font, text, new Vector2(x, y), color, 0f, Vector2.Zero, textScale, SpriteEffects.None, 0f);
         }
 
         private void DrawBorder(SpriteBatch sb, Rectangle r, int thickness, Color color)
