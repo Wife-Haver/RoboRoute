@@ -7,20 +7,27 @@ using System.Collections.Generic;
 
 namespace RoboRoute.RoboRoute.Core
 {
-    // The middle panel (code queue + Run button) and the right panel (block palette),
+    // this file handles the middle panel (code queue + Run button) and the right panel (block palette),
     // including dragging blocks between them. It edits the ProgramRunner's queue;
-    // it never moves the robot itself.
+    // it never moves the robot itself. it only passes commands/movements into the robot
     public class CodeEditorUI
     {
         private const int Margin = 10;
         private const int HeaderHeight = 40;
         private const int BlockHeight = 40;
         private const int BlockGap = 8;
+        private const int SlotStep = BlockHeight + BlockGap;   // distance from one block's top to the next
 
         // Bottom of the middle panel: status line + Run button
         private const int ButtonHeight = 44;
         private const int StatusHeight = 24;
         private const int FooterHeight = ButtonHeight + StatusHeight + Margin * 2;
+
+        // Queue scrolling
+        private const int MaxQueueBlocks = 40;          // longest program the player can build
+        private const int EdgeScrollZone = 30;          // px from the top/bottom of the queue where dragging auto-scrolls
+        private const float EdgeScrollSpeed = 400f;     // px per second
+        private const int ScrollbarWidth = 4;
 
         private readonly ViewportLayout _layout;
         private readonly ProgramRunner _runner;
@@ -41,6 +48,9 @@ namespace RoboRoute.RoboRoute.Core
 
         private MouseState _prevMouse;
         private Point _mousePos;        // window coordinates
+
+        private float _scrollY;         // how many pixels the queue is scrolled down (0 = top)
+        private int _lastActiveStep = -1;
 
         private List<BlockType> Queue => _runner.Queue;
 
@@ -64,16 +74,17 @@ namespace RoboRoute.RoboRoute.Core
         {
             return new Rectangle(
                 Margin,
-                HeaderHeight + index * (BlockHeight + BlockGap),
+                HeaderHeight + index * SlotStep,
                 _layout.Right.Width - Margin * 2,
                 BlockHeight);
         }
 
+        // Where a queue block is drawn right now (takes the scroll offset into account)
         private Rectangle QueueSlot(int index)
         {
             return new Rectangle(
                 Margin,
-                HeaderHeight + index * (BlockHeight + BlockGap),
+                HeaderHeight + index * SlotStep - (int)_scrollY,
                 _layout.Middle.Width - Margin * 2,
                 BlockHeight);
         }
@@ -91,14 +102,39 @@ namespace RoboRoute.RoboRoute.Core
             }
         }
 
-        // How many blocks fit in the middle panel (above the footer)
-        private int QueueCapacity
+        // The visible window onto the queue: between the header and the footer
+        private int ListHeight => Math.Max(0, _layout.Middle.Height - HeaderHeight - FooterHeight);
+
+        private Rectangle ListArea => new Rectangle(0, HeaderHeight, _layout.Middle.Width, ListHeight);
+
+        // The queue plus one empty slot at the end to drop new blocks into
+        private int ContentSlotCount => Math.Min(Queue.Count + 1, MaxQueueBlocks);
+
+        private int ContentHeight => ContentSlotCount * SlotStep - BlockGap;
+
+        private float MaxScroll => Math.Max(0, ContentHeight - ListHeight);
+
+        private void ClampScroll()
         {
-            get
-            {
-                int available = _layout.Middle.Height - HeaderHeight - FooterHeight;
-                return Math.Max(0, (available + BlockGap) / (BlockHeight + BlockGap));
-            }
+            _scrollY = MathHelper.Clamp(_scrollY, 0f, MaxScroll);
+        }
+
+        // Scrolls just enough to bring a queue block fully into view
+        private void ScrollToShow(int index)
+        {
+            float top = index * SlotStep;
+            float bottom = top + BlockHeight;
+
+            if (top < _scrollY)
+                _scrollY = top;
+            else if (bottom > _scrollY + ListHeight)
+                _scrollY = bottom - ListHeight;
+        }
+
+        // Is any part of this (local) rectangle inside the visible queue area?
+        private bool IsInView(Rectangle slot)
+        {
+            return slot.Bottom > HeaderHeight && slot.Y < HeaderHeight + ListHeight;
         }
 
         // Which position in the queue a block dropped at this (local) point would take
@@ -113,15 +149,22 @@ namespace RoboRoute.RoboRoute.Core
         }
 
         // ------------------------------------------------------------------
-        //  Input: drag and drop + Run button clicks
+        //  Input: scrolling + drag and drop + Run button clicks
         // ------------------------------------------------------------------
 
-        public void Update(MouseState mouse)
+        // dt is optional so existing calls like Update(Mouse.GetState()) still work,
+        // but pass the real frame time for smooth auto-scrolling: Update(Mouse.GetState(), dt)
+        public void Update(MouseState mouse, float dt = 1f / 60f)
         {
             _mousePos = mouse.Position;
 
             bool pressed = mouse.LeftButton == ButtonState.Pressed && _prevMouse.LeftButton == ButtonState.Released;
             bool released = mouse.LeftButton == ButtonState.Released && _prevMouse.LeftButton == ButtonState.Pressed;
+
+            // Mouse wheel scrolls the queue while the cursor is over the middle panel (one notch = one block)
+            int wheel = mouse.ScrollWheelValue - _prevMouse.ScrollWheelValue;
+            if (wheel != 0 && _layout.Middle.Bounds.Contains(mouse.Position))
+                _scrollY -= wheel / 120f * SlotStep;
 
             if (pressed && !_dragging)
             {
@@ -132,6 +175,25 @@ namespace RoboRoute.RoboRoute.Core
 
             if (released && _dragging)
                 DropBlock(mouse.Position);
+
+            // Dragging a block near the top or bottom of the queue scrolls it
+            if (_dragging && _layout.Middle.Bounds.Contains(mouse.Position))
+            {
+                int localY = mouse.Y - _layout.Middle.Y;
+
+                if (localY < HeaderHeight + EdgeScrollZone)
+                    _scrollY -= EdgeScrollSpeed * dt;
+                else if (localY > HeaderHeight + ListHeight - EdgeScrollZone)
+                    _scrollY += EdgeScrollSpeed * dt;
+            }
+
+            // While the program runs, keep the executing block in view
+            int active = _runner.IsRunning ? _runner.ActiveStep : -1;
+            if (active >= 0 && active != _lastActiveStep)
+                ScrollToShow(active);
+            _lastActiveStep = active;
+
+            ClampScroll();   // the queue may have grown, shrunk, or the window may have been resized
 
             _prevMouse = mouse;
         }
@@ -167,8 +229,12 @@ namespace RoboRoute.RoboRoute.Core
             }
             else if (_layout.Middle.Bounds.Contains(pos))
             {
-                // Pick a block back up out of the queue (to reorder it or throw it away)
                 Point local = ToLocal(pos, _layout.Middle);
+
+                // Blocks scrolled under the header or footer can't be grabbed
+                if (!ListArea.Contains(local)) return;
+
+                // Pick a block back up out of the queue (to reorder it or throw it away)
                 for (int i = 0; i < Queue.Count; i++)
                 {
                     Rectangle slot = QueueSlot(i);
@@ -196,7 +262,7 @@ namespace RoboRoute.RoboRoute.Core
         {
             _dragging = false;
 
-            if (_layout.Middle.Bounds.Contains(pos) && Queue.Count < QueueCapacity)
+            if (_layout.Middle.Bounds.Contains(pos) && Queue.Count < MaxQueueBlocks)
             {
                 int index = GetInsertIndex(ToLocal(pos, _layout.Middle));
                 Queue.Insert(index, _dragType);
@@ -242,33 +308,53 @@ namespace RoboRoute.RoboRoute.Core
         private void DrawMiddlePanel(SpriteBatch sb)
         {
             Viewport mid = _layout.Middle;
+            Color panelColor = new Color(30, 30, 40);
 
-            // Panel background + divider line on the left edge
-            _ui.Rect(sb, new Rectangle(0, 0, mid.Width, mid.Height), new Color(30, 30, 40));
-            _ui.Rect(sb, new Rectangle(0, 0, 2, mid.Height), Color.White);
+            // Panel background
+            _ui.Rect(sb, new Rectangle(0, 0, mid.Width, mid.Height), panelColor);
 
-            _ui.Text(sb, "Code Queue", new Vector2(Margin, 10), Color.White);
+            // ---- Scrolling content: drawn first, then the header and footer are painted over it ----
 
-            // Faint outlines showing how many blocks fit
-            for (int i = 0; i < QueueCapacity; i++)
-                _ui.Border(sb, QueueSlot(i), 1, new Color(60, 60, 75));
+            // Faint outlines for the empty slots (enough to fill the view, never more than the queue limit)
+            int fitting = (ListHeight + BlockGap) / SlotStep;
+            int outlineCount = Math.Min(MaxQueueBlocks, Math.Max(ContentSlotCount, fitting));
+            for (int i = 0; i < outlineCount; i++)
+            {
+                Rectangle slot = QueueSlot(i);
+                if (IsInView(slot))
+                    _ui.Border(sb, slot, 1, new Color(60, 60, 75));
+            }
 
             // The blocks in the queue (the one being executed gets a yellow outline)
             for (int i = 0; i < Queue.Count; i++)
             {
-                _ui.Block(sb, QueueSlot(i), Queue[i]);
+                Rectangle slot = QueueSlot(i);
+                if (!IsInView(slot)) continue;
+
+                _ui.Block(sb, slot, Queue[i]);
 
                 if (_runner.IsRunning && i == _runner.ActiveStep)
-                    _ui.Border(sb, QueueSlot(i), 4, Color.Yellow);
+                    _ui.Border(sb, slot, 4, Color.Yellow);
             }
 
             // Yellow line showing where the dragged block will land
-            if (_dragging && mid.Bounds.Contains(_mousePos) && Queue.Count < QueueCapacity)
+            if (_dragging && mid.Bounds.Contains(_mousePos) && Queue.Count < MaxQueueBlocks)
             {
                 int index = GetInsertIndex(ToLocal(_mousePos, mid));
                 Rectangle slot = QueueSlot(index);
                 _ui.Rect(sb, new Rectangle(Margin, slot.Y - BlockGap / 2 - 1, slot.Width, 3), Color.Yellow);
             }
+
+            // ---- Header and footer hide any block that has scrolled underneath them ----
+            _ui.Rect(sb, new Rectangle(0, 0, mid.Width, HeaderHeight), panelColor);
+            _ui.Rect(sb, new Rectangle(0, mid.Height - FooterHeight, mid.Width, FooterHeight), panelColor);
+
+            // Divider line on the left edge
+            _ui.Rect(sb, new Rectangle(0, 0, 2, mid.Height), Color.White);
+
+            _ui.Text(sb, "Code Queue", new Vector2(Margin, 10), Color.White);
+
+            DrawScrollbar(sb);
 
             // Footer: status line, then the Run/Stop button
             if (_runner.Status.Length > 0)
@@ -282,6 +368,21 @@ namespace RoboRoute.RoboRoute.Core
             }
 
             DrawRunButton(sb);
+        }
+
+        // A thin bar in the right margin; only shown when the queue is longer than the view
+        private void DrawScrollbar(SpriteBatch sb)
+        {
+            if (MaxScroll <= 0 || ListHeight <= 0) return;
+
+            int x = _layout.Middle.Width - Margin / 2 - ScrollbarWidth / 2 - 1;
+
+            Rectangle track = new Rectangle(x, HeaderHeight, ScrollbarWidth, ListHeight);
+            _ui.Rect(sb, track, new Color(50, 50, 65));
+
+            int thumbHeight = Math.Max(20, (int)((float)ListHeight * ListHeight / ContentHeight));
+            int thumbY = HeaderHeight + (int)((ListHeight - thumbHeight) * (_scrollY / MaxScroll));
+            _ui.Rect(sb, new Rectangle(x, thumbY, ScrollbarWidth, thumbHeight), new Color(140, 140, 160));
         }
 
         private void DrawRunButton(SpriteBatch sb)
