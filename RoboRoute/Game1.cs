@@ -37,10 +37,12 @@ namespace RoboRoute
 
             LevelData level = LevelData.Level1();
 
-            _tileMap = new LevelTileMap(level.Map, Content.Load<Texture2D>("FloorTile"), Content.Load<Texture2D>("WallTile"));
-            _robot = new Robot(Content.Load<Texture2D>("RobotProto"), new Point(2, 2));
+            _tileMap = new LevelTileMap(level.Map,Content);
+            Point startTile = _tileMap.FindTile(LevelTileMap.Start) ?? new Point(1, 1); ;
 
-            _runner = new ProgramRunner(_robot, _tileMap.IsWalkable, new Point(2,2)); //level.RobotStart
+            _robot = new Robot(Content.Load<Texture2D>("RobotProto"), startTile);
+
+            _runner = new ProgramRunner(_robot, _tileMap.IsWalkable, startTile); //level.RobotStart
 
             _layout = new ViewportLayout();
             SyncLayoutToWindow();

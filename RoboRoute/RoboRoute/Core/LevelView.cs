@@ -2,9 +2,8 @@
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using RoboRoute.RoboRoute.Core;
 
-namespace RoboRoute
+namespace RoboRoute.RoboRoute.Core
 {
     // Draws the level (tile map + robot) at a low internal resolution,
     // then scales it up to fit inside the level viewport.

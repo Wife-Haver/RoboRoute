@@ -5,7 +5,7 @@ using RoboRoute.RoboRoute.Commands;
 using System;
 using System.Collections.Generic;
 
-namespace RoboRoute.RoboRoute.Content
+namespace RoboRoute.RoboRoute.Core
 {
     // The middle panel (code queue + Run button) and the right panel (block palette),
     // including dragging blocks between them. It edits the ProgramRunner's queue;
