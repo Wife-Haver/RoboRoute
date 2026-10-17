@@ -31,4 +31,12 @@
     <Folder Include="RoboRoute\Screens\" />
     <Folder Include="RoboRoute\UI\" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MonoGameLibrary\MonoGameLibrary.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="MonoGameLibrary">
+      <HintPath>..\MonoGameLibrary\obj\Release\net9.0\MonoGameLibrary.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 </Project>
