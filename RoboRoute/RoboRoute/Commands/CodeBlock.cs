@@ -13,7 +13,8 @@ namespace RoboRoute.RoboRoute.Commands
     {
         MoveForward,
         TurnLeft,
-        TurnRight
+        TurnRight,
+        Repeat
     }
 
     public static class BlockInfo
@@ -22,9 +23,11 @@ namespace RoboRoute.RoboRoute.Commands
         {
             switch (type)
             {
+                
                 case BlockType.MoveForward: return "Move Forward";
                 case BlockType.TurnLeft: return "Turn Left";
                 case BlockType.TurnRight: return "Turn Right";
+                case BlockType.Repeat: return "Repeat";
                 default: return type.ToString();
             }
         }
@@ -36,6 +39,8 @@ namespace RoboRoute.RoboRoute.Commands
                 case BlockType.MoveForward: return new Color(46, 125, 80);
                 case BlockType.TurnLeft: return new Color(52, 101, 164);
                 case BlockType.TurnRight: return new Color(164, 101, 52);
+                case BlockType.Repeat: return new Color(130, 70, 160);
+
                 default: return Color.Gray;
             }
         }

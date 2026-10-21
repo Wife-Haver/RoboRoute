@@ -14,6 +14,10 @@ namespace RoboRoute.RoboRoute.Core
         public const int Start = 2;
         public const int Goal = 3;
 
+
+        public int GetTile(Point tile) =>
+           InBounds(tile) ? _tiles[tile.Y, tile.X] : -1;
+
         // Content file name for each tile ID (index = tile ID).
         // To add a tile type: add an ID constant above and its texture name here.
         private static readonly string[] TextureNames =
@@ -67,6 +71,8 @@ namespace RoboRoute.RoboRoute.Core
             }
             return null;
         }
+
+       
 
         public void Draw(SpriteBatch spriteBatch)
         {

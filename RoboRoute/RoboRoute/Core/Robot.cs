@@ -117,6 +117,7 @@ namespace RoboRoute.RoboRoute.Core
 
         public void Update(GameTime gameTime)
         {
+
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
             // Animate turning

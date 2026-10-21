@@ -1,27 +1,31 @@
 ﻿using Microsoft.Xna.Framework;
 using RoboRoute.RoboRoute.Commands;
-using RoboRoute.RoboRoute.Core;
 using System;
 using System.Collections.Generic;
 
-namespace RoboRoute
+namespace RoboRoute.RoboRoute.Core
 {
-    // Holds the player's program (the block queue) and executes it on the robot.
-    // It knows nothing about the mouse or the screen, so it's easy to extend
-    // later (loops, goal checks, pauses between blocks...).
+    // Holds the player's program (a tree of blocks) and executes it on the robot.
+    // It knows nothing about the mouse or the screen.
     public class ProgramRunner
     {
+        // Safety limit: nested loops multiply (99 x 99 x 99...), so refuse absurdly long runs
+        private const int MaxSteps = 5000;
+
         private readonly Robot _robot;
         private readonly Func<Point, bool> _isWalkable;
         private readonly Point _startTile;
 
-        private int _nextStep;          // index of the next block to execute
+        // The program unrolled into a flat list of commands, built when Run is pressed.
+        // A Repeat block with Count 3 and two children becomes those two children, three times over.
+        private readonly List<Block> _steps = new List<Block>();
+        private int _nextStep;          // index of the next step to execute
 
-        // The player's program, top to bottom
-        public List<BlockType> Queue { get; } = new List<BlockType>();
+        // The player's program, top to bottom (Repeat blocks hold their own children)
+        public List<Block> Queue { get; } = new List<Block>();
 
         public bool IsRunning { get; private set; }
-        public int ActiveStep { get; private set; } = -1;   // block currently executing, -1 = none
+        public Block ActiveBlock { get; private set; }   // the command currently executing, null = none
         public string Status { get; private set; } = "";
         public Color StatusColor { get; private set; } = Color.White;
 
@@ -36,10 +40,25 @@ namespace RoboRoute
         {
             if (IsRunning || Queue.Count == 0) return;
 
+            _steps.Clear();
+            if (!Unroll(Queue))
+            {
+                Status = "Too long! (over " + MaxSteps + " steps)";
+                StatusColor = new Color(255, 120, 120);
+                return;
+            }
+
+            if (_steps.Count == 0)
+            {
+                Status = "Nothing to run";
+                StatusColor = Color.LightGray;
+                return;
+            }
+
             _robot.Reset(_startTile);   // always start from the beginning
             IsRunning = true;
             _nextStep = 0;
-            ActiveStep = -1;
+            ActiveBlock = null;
             Status = "Running...";
             StatusColor = Color.White;
         }
@@ -50,7 +69,7 @@ namespace RoboRoute
 
             _robot.Reset(_startTile);
             IsRunning = false;
-            ActiveStep = -1;
+            ActiveBlock = null;
             Status = "Stopped";
             StatusColor = Color.LightGray;
         }
@@ -61,26 +80,25 @@ namespace RoboRoute
             Status = "";
         }
 
-        // Runs one block at a time: the next block starts only when the robot has finished the last one
+        // Runs one command at a time: the next one starts only when the robot has finished the last one
         public void Update()
         {
             if (!IsRunning || _robot.IsBusy) return;
 
-            if (_nextStep >= Queue.Count)
+            if (_nextStep >= _steps.Count)
             {
                 Finish("Program finished!", new Color(120, 220, 140));
                 return;
             }
 
-            ActiveStep = _nextStep;
-            BlockType block = Queue[_nextStep];
+            ActiveBlock = _steps[_nextStep];
             _nextStep++;
 
-            switch (block)
+            switch (ActiveBlock.Type)
             {
                 case BlockType.MoveForward:
                     if (!_robot.MoveForward(_isWalkable))
-                        Finish("Blocked by a wall at step " + (ActiveStep + 1), new Color(255, 120, 120));
+                        Finish("Blocked by a wall at step " + _nextStep, new Color(255, 120, 120));
                     break;
 
                 case BlockType.TurnLeft:
@@ -93,10 +111,35 @@ namespace RoboRoute
             }
         }
 
+        // Flattens a list of blocks into _steps, repeating loop bodies Count times.
+        // Returns false if the program would be longer than MaxSteps.
+        private bool Unroll(List<Block> blocks)
+        {
+            foreach (Block block in blocks)
+            {
+                if (block.IsLoop)
+                {
+                    // Skipping loops with nothing inside also keeps empty nested loops from burning time
+                    if (!block.HasCommand()) continue;
+
+                    for (int i = 0; i < block.Count; i++)
+                    {
+                        if (!Unroll(block.Children)) return false;
+                    }
+                }
+                else
+                {
+                    _steps.Add(block);
+                    if (_steps.Count > MaxSteps) return false;
+                }
+            }
+            return true;
+        }
+
         private void Finish(string message, Color color)
         {
             IsRunning = false;
-            ActiveStep = -1;
+            ActiveBlock = null;
             Status = message;
             StatusColor = color;
         }

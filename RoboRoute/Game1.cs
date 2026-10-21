@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using RoboRoute.RoboRoute.Content;
 using RoboRoute.RoboRoute.Core;
+using System.Diagnostics;
 
 namespace RoboRoute
 {
@@ -14,6 +15,8 @@ namespace RoboRoute
 
         private LevelTileMap _tileMap;
         private Robot _robot;
+
+        private Point _lastTile = new Point(-1, -1);
 
         private ProgramRunner _runner;       // the player's program + running it
         private ViewportLayout _layout;      // the three viewports
@@ -29,6 +32,17 @@ namespace RoboRoute
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
             Window.AllowUserResizing = true;
+        }
+        private static string TileName(int id)
+        {
+            switch (id)
+            {
+                case LevelTileMap.Floor: return "Floor";
+                case LevelTileMap.Wall: return "Wall";
+                case LevelTileMap.Start: return "Start";
+                case LevelTileMap.Goal: return "Goal";
+                default: return "Unknown (" + id + ")";
+            }
         }
 
         protected override void LoadContent()
@@ -72,6 +86,12 @@ namespace RoboRoute
                 _robot.HandleKeyboard(kb, _tileMap.IsWalkable);
 
             _robot.Update(gameTime);
+            if (_robot.TilePos != _lastTile)
+            {
+                _lastTile = _robot.TilePos;
+                int id = _tileMap.GetTile(_robot.TilePos);
+                Debug.WriteLine($"Robot at {_robot.TilePos} is standing on: {TileName(id)}");
+            }
             _runner.Update();
 
             base.Update(gameTime);
