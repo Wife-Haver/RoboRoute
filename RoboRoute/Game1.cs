@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using RoboRoute.RoboRoute.Content;
+
 using RoboRoute.RoboRoute.Core;
 using System.Diagnostics;
 
@@ -49,14 +49,14 @@ namespace RoboRoute
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            LevelData level = LevelData.Level1();
+            LevelData level = Levels.All[0];
 
             _tileMap = new LevelTileMap(level.Map,Content);
             Point startTile = _tileMap.FindTile(LevelTileMap.Start) ?? new Point(1, 1); ;
 
             _robot = new Robot(Content.Load<Texture2D>("RobotProto"), startTile);
 
-            _runner = new ProgramRunner(_robot, _tileMap.IsWalkable, startTile); //level.RobotStart
+            _runner = new ProgramRunner(_robot, _tileMap.IsWalkable, _tileMap.IsGoal, startTile); 
 
             _layout = new ViewportLayout();
             SyncLayoutToWindow();
@@ -64,7 +64,7 @@ namespace RoboRoute
             _levelView = new LevelView(GraphicsDevice, _tileMap, _robot);
 
             var ui = new UiDraw(GraphicsDevice, Content.Load<SpriteFont>("Font"));
-            _editorUI = new CodeEditorUI(_layout, _runner, ui);
+            _editorUI = new CodeEditorUI(_layout, _runner, ui, level);
         }
 
         protected override void Update(GameTime gameTime)

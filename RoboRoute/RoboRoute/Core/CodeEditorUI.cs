@@ -11,6 +11,9 @@ namespace RoboRoute.RoboRoute.Core
     // including dragging blocks between them. It edits the ProgramRunner's queue;
     // it never moves the robot itself. it only passes commands/movements into the robot
     //
+    // The level decides what the player gets: which blocks appear in the palette, how many of each
+    // (shown as a small number on the block), and the total number of blocks allowed in the queue.
+    //
     // The queue is a tree: a Repeat block holds child blocks. To draw and hit-test it, the tree is
     // flattened every frame into "rows" (see RebuildRows): one row per block, plus an "end" bar row
     // after each Repeat block's children.
@@ -28,13 +31,15 @@ namespace RoboRoute.RoboRoute.Core
         private const int MaxLoopNesting = 3;      // loops inside loops inside loops, at most
         private const int CountBoxWidth = 44;
 
+        // The small number on each palette block
+        private const int BadgeSize = 28;
+
         // Bottom of the middle panel: status line + Run button
         private const int ButtonHeight = 44;
         private const int StatusHeight = 24;
         private const int FooterHeight = ButtonHeight + StatusHeight + Margin * 2;
 
         // Queue scrolling
-        private const int MaxQueueBlocks = 40;          // most blocks the player can place (loop contents count too)
         private const int EdgeScrollZone = 30;          // px from the top/bottom of the queue where dragging auto-scrolls
         private const float EdgeScrollSpeed = 400f;     // px per second
         private const int ScrollbarWidth = 4;
@@ -67,14 +72,19 @@ namespace RoboRoute.RoboRoute.Core
         private readonly ProgramRunner _runner;
         private readonly UiDraw _ui;
 
-        // The blocks available in the right panel (unlimited supply of each)
-        private readonly BlockType[] _palette =
+        private LevelData _level;
+
+        // Every kind of block that exists, in the order they appear in the palette
+        private readonly BlockType[] _allBlockTypes =
         {
             BlockType.MoveForward,
             BlockType.TurnLeft,
             BlockType.TurnRight,
             BlockType.Repeat
         };
+
+        // The blocks shown in the right panel: only the ones this level gives the player (count > 0)
+        private readonly List<BlockType> _palette = new List<BlockType>();
 
         private readonly List<Row> _rows = new List<Row>();
         private int _contentCursor;     // content Y just below the last row
@@ -98,13 +108,74 @@ namespace RoboRoute.RoboRoute.Core
 
         private List<Block> Queue => _runner.Queue;
 
-        public CodeEditorUI(ViewportLayout layout, ProgramRunner runner, UiDraw ui)
+        // Most blocks the player may place in total (loop contents count too)
+        private int MaxBlocks => _level.MaxBlocksAllowed;
+
+        public CodeEditorUI(ViewportLayout layout, ProgramRunner runner, UiDraw ui, LevelData level)
         {
             _layout = layout;
             _runner = runner;
             _ui = ui;
 
+            SetLevel(level);
+        }
+
+        // Switches to a level: rebuilds the palette from its given blocks and empties the queue.
+        // Call this again when the player moves on to the next level.
+        public void SetLevel(LevelData level)
+        {
+            _level = level;
+
+            _editBlock = null;
+            _dragging = false;
+            _dragBlock = null;
+
+            _palette.Clear();
+            foreach (BlockType type in _allBlockTypes)
+            {
+                if (level.GetGivenCount(type) > 0)
+                    _palette.Add(type);
+            }
+
+            Queue.Clear();
+            _runner.ClearStatus();
+            _scrollY = 0f;
             RebuildRows();
+        }
+
+        // ------------------------------------------------------------------
+        //  Block limits
+        // ------------------------------------------------------------------
+
+        private static int CountOfType(Block block, BlockType type)
+        {
+            int count = block.Type == type ? 1 : 0;
+            foreach (Block child in block.Children)
+                count += CountOfType(child, type);
+            return count;
+        }
+
+        // How many blocks of this type are in the queue right now (including inside loops)
+        private int UsedCount(BlockType type)
+        {
+            int used = 0;
+            foreach (Block block in Queue)
+                used += CountOfType(block, type);
+            return used;
+        }
+
+        // How many more of this type the player may still place: the number shown on the palette block
+        private int RemainingOf(BlockType type)
+        {
+            return Math.Max(0, _level.GetGivenCount(type) - UsedCount(type));
+        }
+
+        private int TotalBlocks()
+        {
+            int total = 0;
+            foreach (Block block in Queue)
+                total += block.TotalBlocks();
+            return total;
         }
 
         // ------------------------------------------------------------------
@@ -258,14 +329,6 @@ namespace RoboRoute.RoboRoute.Core
             return rect.Bottom > HeaderHeight && rect.Y < HeaderHeight + ListHeight;
         }
 
-        private int TotalBlocks()
-        {
-            int total = 0;
-            foreach (Block block in Queue)
-                total += block.TotalBlocks();
-            return total;
-        }
-
         // ------------------------------------------------------------------
         //  Where would a dropped block go?
         // ------------------------------------------------------------------
@@ -304,11 +367,26 @@ namespace RoboRoute.RoboRoute.Core
             return new DropTarget { List = Queue, Index = Queue.Count, Depth = 0, LineY = _contentCursor };
         }
 
+        // Is the dragged block (and anything inside it) allowed to go here?
+        // The queue doesn't contain the dragged block while it's in the player's hand,
+        // so these checks are "what's already placed" plus "what I'm holding".
         private bool CanDrop(DropTarget target)
         {
             if (_dragBlock == null) return false;
-            if (TotalBlocks() + _dragBlock.TotalBlocks() > MaxQueueBlocks) return false;
+
+            // Total limit for the level
+            if (TotalBlocks() + _dragBlock.TotalBlocks() > MaxBlocks) return false;
+
+            // Not nested too deeply
             if (target.Depth + _dragBlock.LoopDepth() > MaxLoopNesting) return false;
+
+            // Per-type limits (the "given" counts)
+            foreach (BlockType type in _allBlockTypes)
+            {
+                if (UsedCount(type) + CountOfType(_dragBlock, type) > _level.GetGivenCount(type))
+                    return false;
+            }
+
             return true;
         }
 
@@ -494,16 +572,17 @@ namespace RoboRoute.RoboRoute.Core
         {
             if (_layout.Right.Bounds.Contains(pos))
             {
-                // Grab a fresh block from the palette
+                // Grab a fresh block from the palette (only if the level still gives you one)
                 Point local = ToLocal(pos, _layout.Right);
-                for (int i = 0; i < _palette.Length; i++)
+                for (int i = 0; i < _palette.Count; i++)
                 {
                     Rectangle slot = PaletteSlot(i);
-                    if (slot.Contains(local))
-                    {
-                        BeginDrag(new Block(_palette[i]), local, slot);
-                        return;
-                    }
+                    if (!slot.Contains(local)) continue;
+
+                    if (RemainingOf(_palette[i]) <= 0) return;   // none left
+
+                    BeginDrag(new Block(_palette[i]), local, slot);
+                    return;
                 }
             }
             else if (_layout.Middle.Bounds.Contains(pos))
@@ -554,7 +633,8 @@ namespace RoboRoute.RoboRoute.Core
                     RebuildRows();
                 }
             }
-            // Dropped anywhere else (or somewhere not allowed): the block is discarded
+            // Dropped anywhere else (or somewhere not allowed): the block is discarded,
+            // which also gives its count (and its contents') back to the palette
 
             _dragBlock = null;
         }
@@ -606,8 +686,8 @@ namespace RoboRoute.RoboRoute.Core
             // ---- Scrolling content: drawn first, then the header and footer are painted over it ----
 
             // Faint outlines for the empty slots after the last row (as many as blocks you can still add)
-            int remaining = MaxQueueBlocks - TotalBlocks();
-            for (int k = 0; k < remaining; k++)
+            int slotsLeft = MaxBlocks - TotalBlocks();
+            for (int k = 0; k < slotsLeft; k++)
             {
                 Rectangle outline = new Rectangle(
                     Margin,
@@ -676,6 +756,13 @@ namespace RoboRoute.RoboRoute.Core
             _ui.Rect(sb, new Rectangle(0, 0, 2, mid.Height), Color.White);
 
             _ui.Text(sb, "Code Queue", new Vector2(Margin, 10), Color.White);
+
+            // Block counter on the right of the header: "Blocks 4/6" (amber once the limit is reached)
+            int total = TotalBlocks();
+            string counter = "Blocks " + total + "/" + MaxBlocks;
+            Vector2 counterSize = _ui.Font.MeasureString(counter);
+            Color counterColor = total >= MaxBlocks ? new Color(255, 200, 100) : Color.White;
+            _ui.Text(sb, counter, new Vector2(mid.Width - Margin - counterSize.X, 10), counterColor);
 
             DrawScrollbar(sb);
 
@@ -784,8 +871,33 @@ namespace RoboRoute.RoboRoute.Core
 
             _ui.Text(sb, "Blocks", new Vector2(Margin, 10), Color.White);
 
-            for (int i = 0; i < _palette.Length; i++)
-                _ui.Block(sb, PaletteSlot(i), _palette[i]);
+            // Each available block, with a small number showing how many more can be placed.
+            // At zero the block is dimmed and can't be picked up.
+            for (int i = 0; i < _palette.Count; i++)
+            {
+                BlockType type = _palette[i];
+                Rectangle slot = PaletteSlot(i);
+                int remaining = RemainingOf(type);
+
+                _ui.Block(sb, slot, type, remaining > 0 ? 1f : 0.35f);
+                DrawCountBadge(sb, slot, remaining);
+            }
+        }
+
+        // The small number box at the right end of a palette block
+        private void DrawCountBadge(SpriteBatch sb, Rectangle slot, int remaining)
+        {
+            Rectangle badge = new Rectangle(
+                slot.Right - BadgeSize - 8,
+                slot.Y + (slot.Height - BadgeSize) / 2,
+                BadgeSize,
+                BadgeSize);
+
+            Color color = remaining > 0 ? Color.White : new Color(255, 110, 110);
+
+            _ui.Rect(sb, badge, new Color(20, 20, 30));
+            _ui.Border(sb, badge, 2, color);
+            _ui.FittedText(sb, remaining.ToString(), badge, color, true);
         }
     }
 }

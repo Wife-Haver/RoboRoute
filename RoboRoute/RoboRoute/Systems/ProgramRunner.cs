@@ -1,7 +1,8 @@
-﻿using Microsoft.Xna.Framework;
-using RoboRoute.RoboRoute.Commands;
-using System;
+﻿using System;
 using System.Collections.Generic;
+
+using Microsoft.Xna.Framework;
+using RoboRoute.RoboRoute.Commands;
 
 namespace RoboRoute.RoboRoute.Core
 {
@@ -14,6 +15,7 @@ namespace RoboRoute.RoboRoute.Core
 
         private readonly Robot _robot;
         private readonly Func<Point, bool> _isWalkable;
+        private readonly Func<Point, bool> _isGoal;
         private readonly Point _startTile;
 
         // The program unrolled into a flat list of commands, built when Run is pressed.
@@ -29,10 +31,15 @@ namespace RoboRoute.RoboRoute.Core
         public string Status { get; private set; } = "";
         public Color StatusColor { get; private set; } = Color.White;
 
-        public ProgramRunner(Robot robot, Func<Point, bool> isWalkable, Point startTile)
+        // True when the last run ended with the robot standing on the goal tile.
+        // Use this to unlock the next level, show a win screen, etc.
+        public bool ReachedGoal { get; private set; }
+
+        public ProgramRunner(Robot robot, Func<Point, bool> isWalkable, Func<Point, bool> isGoal, Point startTile)
         {
             _robot = robot;
             _isWalkable = isWalkable;
+            _isGoal = isGoal;
             _startTile = startTile;
         }
 
@@ -57,6 +64,7 @@ namespace RoboRoute.RoboRoute.Core
 
             _robot.Reset(_startTile);   // always start from the beginning
             IsRunning = true;
+            ReachedGoal = false;
             _nextStep = 0;
             ActiveBlock = null;
             Status = "Running...";
@@ -69,6 +77,7 @@ namespace RoboRoute.RoboRoute.Core
 
             _robot.Reset(_startTile);
             IsRunning = false;
+            ReachedGoal = false;
             ActiveBlock = null;
             Status = "Stopped";
             StatusColor = Color.LightGray;
@@ -78,6 +87,7 @@ namespace RoboRoute.RoboRoute.Core
         public void ClearStatus()
         {
             Status = "";
+            ReachedGoal = false;
         }
 
         // Runs one command at a time: the next one starts only when the robot has finished the last one
@@ -87,7 +97,16 @@ namespace RoboRoute.RoboRoute.Core
 
             if (_nextStep >= _steps.Count)
             {
-                Finish("Program finished!", new Color(120, 220, 140));
+                // The program is over and the robot has stopped moving: did it end on the goal?
+                if (_isGoal(_robot.TilePos))
+                {
+                    ReachedGoal = true;
+                    Finish("Level complete!", new Color(120, 220, 140));
+                }
+                else
+                {
+                    Finish("Didn't reach the goal", new Color(255, 200, 100));
+                }
                 return;
             }
 
