@@ -157,12 +157,15 @@ namespace RoboRoute.RoboRoute.Core
                 }
             }
         }
+        private const float TileFill = 0.8f;
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            // Rotate around the sprite's center, so draw at the tile's center
             Vector2 origin = new Vector2(_texture.Width / 2f, _texture.Height / 2f);
             Vector2 center = _pixelPos + new Vector2(TileSize / 2f, TileSize / 2f);
+
+            // adjust sprite size
+            float scale = 0.05f;//TileSize * TileFill / Math.Max(_texture.Width, _texture.Height);
 
             spriteBatch.Draw(
                 _texture,
@@ -171,7 +174,7 @@ namespace RoboRoute.RoboRoute.Core
                 Color.White,
                 _angle,
                 origin,
-                1f,
+                scale,
                 SpriteEffects.None,
                 0f);
         }

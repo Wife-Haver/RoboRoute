@@ -61,7 +61,7 @@ namespace RoboRoute
             LevelData level = Levels.All[index];
 
             _tileMap = new LevelTileMap(level.Map, Content);
-            _robot = new Robot(Content.Load<Texture2D>("RobotProto"), level.RobotStart);
+            _robot = new Robot(Content.Load<Texture2D>("Robot"), level.RobotStart);
             _runner = new ProgramRunner(_robot, _tileMap.IsWalkable, _tileMap.IsGoal, _tileMap.IsHazard, level.RobotStart);
 
             _levelView = new LevelView(GraphicsDevice, _tileMap, _robot);
