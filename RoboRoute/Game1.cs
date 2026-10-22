@@ -1,9 +1,10 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-
 using RoboRoute.RoboRoute.Core;
-using System.Diagnostics;
+
+// If the compiler can't find UiDraw, ViewportLayout or LevelView, add a "using" line above
+// for whichever namespace you put those files in.
 
 namespace RoboRoute
 {
@@ -13,15 +14,18 @@ namespace RoboRoute
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
 
+        // These stay the same for the whole game
+        private ViewportLayout _layout;
+        private UiDraw _ui;
+        private LevelCompletePopup _popup;
+
+        // These are rebuilt for every level (see LoadLevel)
+        private int _levelIndex;
         private LevelTileMap _tileMap;
         private Robot _robot;
-
-        private Point _lastTile = new Point(-1, -1);
-
-        private ProgramRunner _runner;       // the player's program + running it
-        private ViewportLayout _layout;      // the three viewports
-        private LevelView _levelView;        // draws the level into the left viewport
-        private CodeEditorUI _editorUI;      // middle + right panels, drag and drop
+        private ProgramRunner _runner;
+        private LevelView _levelView;
+        private CodeEditorUI _editorUI;
 
         public Game1()
         {
@@ -33,43 +37,40 @@ namespace RoboRoute
             IsMouseVisible = true;
             Window.AllowUserResizing = true;
         }
-        private static string TileName(int id)
-        {
-            switch (id)
-            {
-                case LevelTileMap.Floor: return "Floor";
-                case LevelTileMap.Wall: return "Wall";
-                case LevelTileMap.Start: return "Start";
-                case LevelTileMap.Goal: return "Goal";
-                default: return "Unknown (" + id + ")";
-            }
-        }
 
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            LevelData level = Levels.All[0];
-
-            _tileMap = new LevelTileMap(level.Map,Content);
-            Point startTile = _tileMap.FindTile(LevelTileMap.Start) ?? new Point(1, 1); ;
-
-            _robot = new Robot(Content.Load<Texture2D>("RobotProto"), startTile);
-
-            _runner = new ProgramRunner(_robot, _tileMap.IsWalkable, _tileMap.IsGoal, startTile); 
+            _ui = new UiDraw(GraphicsDevice, Content.Load<SpriteFont>("Font"));
 
             _layout = new ViewportLayout();
             SyncLayoutToWindow();
 
-            _levelView = new LevelView(GraphicsDevice, _tileMap, _robot);
+            _popup = new LevelCompletePopup(_layout, _ui);
 
-            var ui = new UiDraw(GraphicsDevice, Content.Load<SpriteFont>("Font"));
-            _editorUI = new CodeEditorUI(_layout, _runner, ui, level);
+            LoadLevel(0);
+        }
+
+        // Builds everything that belongs to one level. Also used to restart a level:
+        // it throws away the old queue, robot and map and starts fresh.
+        private void LoadLevel(int index)
+        {
+            _levelIndex = index;
+            LevelData level = Levels.All[index];
+
+            _tileMap = new LevelTileMap(level.Map, Content);
+            _robot = new Robot(Content.Load<Texture2D>("RobotProto"), level.RobotStart);
+            _runner = new ProgramRunner(_robot, _tileMap.IsWalkable, _tileMap.IsGoal, level.RobotStart);
+
+            _levelView = new LevelView(GraphicsDevice, _tileMap, _robot);
+            _editorUI = new CodeEditorUI(_layout, _runner, _ui, level);
         }
 
         protected override void Update(GameTime gameTime)
         {
             var kb = Keyboard.GetState();
+            var mouse = Mouse.GetState();
 
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || kb.IsKeyDown(Keys.Escape))
                 Exit();
@@ -78,7 +79,16 @@ namespace RoboRoute
 
             SyncLayoutToWindow();
             _layout.Update(kb, dt);
-            _editorUI.Update(Mouse.GetState());
+
+            // The popup is modal: while it's open, nothing else in the game gets any input
+            HandlePopupAction(_popup.Update(mouse, dt));
+            if (_popup.IsVisible)
+            {
+                base.Update(gameTime);
+                return;
+            }
+
+            _editorUI.Update(mouse, dt);
 
             // Manual arrow-key control, only while no program is running.
             // Delete this line once you don't want the player moving the robot directly.
@@ -86,15 +96,36 @@ namespace RoboRoute
                 _robot.HandleKeyboard(kb, _tileMap.IsWalkable);
 
             _robot.Update(gameTime);
-            if (_robot.TilePos != _lastTile)
-            {
-                _lastTile = _robot.TilePos;
-                int id = _tileMap.GetTile(_robot.TilePos);
-                Debug.WriteLine($"Robot at {_robot.TilePos} is standing on: {TileName(id)}");
-            }
             _runner.Update();
 
+            // The program ended on the goal: open the "Level Done" window
+            if (_runner.ReachedGoal)
+            {
+                _popup.Show(
+                    Levels.All[_levelIndex].Name,
+                    hasNextLevel: _levelIndex + 1 < Levels.All.Length,
+                    mainMenuAvailable: false);   // set to true once the main menu exists
+            }
+
             base.Update(gameTime);
+        }
+
+        private void HandlePopupAction(PopupAction action)
+        {
+            switch (action)
+            {
+                case PopupAction.Restart:
+                    LoadLevel(_levelIndex);
+                    break;
+
+                case PopupAction.NextLevel:
+                    LoadLevel(_levelIndex + 1);   // only offered when there is a next level
+                    break;
+
+                case PopupAction.MainMenu:
+                    // TODO: switch to the main menu screen once it exists
+                    break;
+            }
         }
 
         protected override void Draw(GameTime gameTime)
@@ -108,6 +139,9 @@ namespace RoboRoute
 
             _levelView.Draw(GraphicsDevice, _spriteBatch, _layout.Level);
             _editorUI.Draw(GraphicsDevice, _spriteBatch);
+
+            // Drawn last so it sits on top of everything (does nothing unless it's open)
+            _popup.Draw(GraphicsDevice, _spriteBatch);
 
             base.Draw(gameTime);
         }

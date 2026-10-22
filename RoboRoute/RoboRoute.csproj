@@ -29,7 +29,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="RoboRoute\Screens\" />
-    <Folder Include="RoboRoute\UI\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoGameLibrary\MonoGameLibrary.csproj" />
