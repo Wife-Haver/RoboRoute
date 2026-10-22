@@ -35,11 +35,14 @@ namespace RoboRoute.RoboRoute.Core
         // Use this to unlock the next level, show a win screen, etc.
         public bool ReachedGoal { get; private set; }
 
-        public ProgramRunner(Robot robot, Func<Point, bool> isWalkable, Func<Point, bool> isGoal, Point startTile)
+        private readonly Func<Point, bool> _isHazard;
+
+        public ProgramRunner(Robot robot, Func<Point, bool> isWalkable, Func<Point, bool> isGoal,Func<Point, bool> isHazard, Point startTile)
         {
             _robot = robot;
             _isWalkable = isWalkable;
             _isGoal = isGoal;
+            _isHazard = isHazard;
             _startTile = startTile;
         }
 
@@ -94,6 +97,13 @@ namespace RoboRoute.RoboRoute.Core
         public void Update()
         {
             if (!IsRunning || _robot.IsBusy) return;
+
+            // The robot has finished its last move: is it standing on a hazard?
+            if (_isHazard(_robot.TilePos))
+            {
+                Finish("Hit a hazard at step " + _nextStep, new Color(255, 120, 120));
+                return;
+            }
 
             if (_nextStep >= _steps.Count)
             {

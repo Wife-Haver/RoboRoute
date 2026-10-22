@@ -1,4 +1,6 @@
-﻿namespace RoboRoute.RoboRoute.Core
+﻿using RoboRoute.RoboRoute.GameLevels;
+
+namespace RoboRoute.RoboRoute.Core
 {
     // The list of all levels, in play order. To add a level: write a method like Level1() below
     // and add it to the All array.
@@ -10,10 +12,16 @@
         private const int S = LevelTileMap.Start;   // where the robot starts (it begins facing UP)
         private const int G = LevelTileMap.Goal;    // where the program must end
 
+        private const int H = LevelTileMap.Hazard;
+
         public static readonly LevelData[] All =
         {
+            
             Level1(),
             Level2(),
+            Level3(),
+
+
         };
 
         // Teaches: Move Forward and Turn Right.
@@ -63,6 +71,29 @@
                 turnLeftBlocks: 2,
                 turnRightBlocks: 2,
                 repeatBlocks: 1);
+        }
+
+        private static LevelData Level3()
+        {
+            int[,] map =
+            {
+                { W, W, W, W, W, W, W },
+                { W, H, F, F, F, H, W },
+                { W, F, F, H, F, F, W },
+                { W, S, F, H, F, G, W },
+                { W, F, F, H, F, F, W },
+                { W, H, F, F, F, H, W },
+                { W, W, W, W, W, W, W }
+            };
+
+            return new LevelData(
+                name: "Hazardous",
+                map: map,
+                maxBlocksAllowed: 14,
+                moveForwardBlocks: 9,
+                turnLeftBlocks: 3,       // not available in this level
+                turnRightBlocks: 4,
+                repeatBlocks: 0);        // not available in this level
         }
     }
 }

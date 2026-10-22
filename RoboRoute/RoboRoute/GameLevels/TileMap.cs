@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace RoboRoute.RoboRoute.Core
+namespace RoboRoute.RoboRoute.GameLevels
 {
     public class LevelTileMap
     {
@@ -13,6 +13,8 @@ namespace RoboRoute.RoboRoute.Core
         public const int Wall = 1;
         public const int Start = 2;
         public const int Goal = 3;
+
+        public const int Hazard = 4;
 
 
         public int GetTile(Point tile) =>
@@ -26,6 +28,7 @@ namespace RoboRoute.RoboRoute.Core
             "WallTile",    // Wall
             "StartTile",   // Start
             "GoalTile",    // Goal
+            "HazardTile"  //Hazard
         };
 
         private readonly int[,] _tiles;         // [row, column] = [y, x]
@@ -56,6 +59,9 @@ namespace RoboRoute.RoboRoute.Core
 
         public bool IsGoal(Point tile) =>
             InBounds(tile) && _tiles[tile.Y, tile.X] == Goal;
+        public bool IsHazard(Point tile) =>
+            InBounds(tile) && _tiles[tile.Y, tile.X] == Hazard;
+
 
         // Returns the first tile with this ID, or null if the map has none.
         // Handy for finding where the robot should start: FindTile(LevelTileMap.Start)
@@ -84,7 +90,7 @@ namespace RoboRoute.RoboRoute.Core
                     Vector2 pos = new Vector2(x * TileSize, y * TileSize);
 
                     // Start and Goal sit on top of a floor tile, so their art can have transparent edges
-                    if (id == Start || id == Goal)
+                    if (id == Start || id == Goal || id == Hazard)
                         spriteBatch.Draw(_textures[Floor], pos, Color.White);
 
                     spriteBatch.Draw(_textures[id], pos, Color.White);

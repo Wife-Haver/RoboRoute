@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using RoboRoute.RoboRoute.Core;
+using RoboRoute.RoboRoute.GameLevels;
 
 // If the compiler can't find UiDraw, ViewportLayout or LevelView, add a "using" line above
 // for whichever namespace you put those files in.
@@ -61,7 +62,7 @@ namespace RoboRoute
 
             _tileMap = new LevelTileMap(level.Map, Content);
             _robot = new Robot(Content.Load<Texture2D>("RobotProto"), level.RobotStart);
-            _runner = new ProgramRunner(_robot, _tileMap.IsWalkable, _tileMap.IsGoal, level.RobotStart);
+            _runner = new ProgramRunner(_robot, _tileMap.IsWalkable, _tileMap.IsGoal, _tileMap.IsHazard, level.RobotStart);
 
             _levelView = new LevelView(GraphicsDevice, _tileMap, _robot);
             _editorUI = new CodeEditorUI(_layout, _runner, _ui, level);
