@@ -1,9 +1,6 @@
-
-using global::RoboRoute.Winforms.Controls;
-using global::RoboRoute.Winforms.Core;
+using System.Diagnostics;
 using RoboRoute.Winforms.Controls;
 using RoboRoute.Winforms.Core;
-using System.Diagnostics;
 
 // NOTE: this namespace must match the one at the top of MainForm.Designer.cs.
 // The template default is RoboRoute.Winforms. If your Designer file says something else, change this line to match.
@@ -27,12 +24,11 @@ public partial class MainForm : Form
     private readonly SplitContainer _mainSplit = new SplitContainer();       // level | editor
     private readonly SplitContainer _editorSplit = new SplitContainer();     // queue | palette
     private readonly LevelPanel _levelPanel = new LevelPanel();
-    private readonly Panel _queueHost = new Panel();                         // the code queue controls go in here next
-    private readonly Panel _paletteHost = new Panel();                       // the block palette controls go in here next
+    private readonly Panel _queueHost = new Panel();                         // the CodeEditor builds the queue in here
+    private readonly Panel _paletteHost = new Panel();                       // ...and the block palette in here
     private readonly Label _blockCounter = new Label();
     private readonly Label _statusLabel = new Label();
     private readonly Button _runButton = new Button();
-    private readonly Button _testButton = new Button();
 
     // Game loop: a timer ticks about 60 times a second, and a stopwatch measures the real time between ticks
     private readonly System.Windows.Forms.Timer _timer = new System.Windows.Forms.Timer();
@@ -43,6 +39,7 @@ public partial class MainForm : Form
     private LevelTileMap _map = null!;
     private Robot _robot = null!;
     private ProgramRunner _runner = null!;
+    private CodeEditor? _editor;
     private bool _levelCompleteShown;
 
     public MainForm()
@@ -96,14 +93,14 @@ public partial class MainForm : Form
         ResumeLayout(true);
     }
 
-    // Middle panel: header with the block counter, the queue area, the status line and the buttons
+    // Middle panel: header with the block counter, the queue area, the status line and the Run button
     private Control BuildQueuePanel()
     {
         var layout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 5,
+            RowCount = 4,
             Padding = new Padding(10),
             BackColor = PanelColor
         };
@@ -112,7 +109,6 @@ public partial class MainForm : Form
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));          // header
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));     // queue area
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30f));     // status line
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36f));     // temporary test button
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50f));     // Run / Stop button
 
         // Header: "Code Queue" on the left, "Blocks 0/8" on the right
@@ -124,11 +120,10 @@ public partial class MainForm : Form
         layout.Controls.Add(title, 0, 0);
         layout.Controls.Add(_blockCounter, 1, 0);
 
-        // Queue area (placeholder until the queue control is written)
+        // Queue area: the CodeEditor fills this with the queue
         _queueHost.Dock = DockStyle.Fill;
-        _queueHost.BackColor = Color.FromArgb(24, 24, 32);
+        _queueHost.BackColor = UiStyle_QueueBack;
         _queueHost.Margin = new Padding(0, 6, 0, 6);
-        _queueHost.Controls.Add(MakePlaceholder("The code queue goes here"));
         layout.Controls.Add(_queueHost, 0, 1);
         layout.SetColumnSpan(_queueHost, 2);
 
@@ -140,28 +135,19 @@ public partial class MainForm : Form
         layout.Controls.Add(_statusLabel, 0, 2);
         layout.SetColumnSpan(_statusLabel, 2);
 
-        // TEMPORARY: fills the queue with this level's solution so you can test before drag-and-drop exists
-        _testButton.Text = "TEMP: fill in this level's solution";
-        _testButton.Dock = DockStyle.Fill;
-        _testButton.Margin = new Padding(0, 0, 0, 4);
-        StyleButton(_testButton, IdleColor);
-        _testButton.Click += OnTestFillClicked;
-        layout.Controls.Add(_testButton, 0, 3);
-        layout.SetColumnSpan(_testButton, 2);
-
         // Run / Stop
         _runButton.Dock = DockStyle.Fill;
         _runButton.Margin = new Padding(0);
         _runButton.Font = ButtonFont;
         StyleButton(_runButton, IdleColor);
         _runButton.Click += OnRunClicked;
-        layout.Controls.Add(_runButton, 0, 4);
+        layout.Controls.Add(_runButton, 0, 3);
         layout.SetColumnSpan(_runButton, 2);
 
         return layout;
     }
 
-    // Right panel: header and the area where the draggable blocks will go
+    // Right panel: header and the area the CodeEditor fills with the draggable blocks
     private Control BuildPalettePanel()
     {
         var layout = new TableLayoutPanel
@@ -181,11 +167,13 @@ public partial class MainForm : Form
         _paletteHost.Dock = DockStyle.Fill;
         _paletteHost.BackColor = Color.FromArgb(36, 28, 44);
         _paletteHost.Margin = new Padding(0, 6, 0, 0);
-        _paletteHost.Controls.Add(MakePlaceholder("The block palette goes here"));
         layout.Controls.Add(_paletteHost, 0, 1);
 
         return layout;
     }
+
+    // The queue's dark background colour (the same one the blocks' list uses)
+    private static readonly Color UiStyle_QueueBack = Color.FromArgb(24, 24, 32);
 
     private static Label MakeLabel(string text, Font font)
     {
@@ -196,17 +184,6 @@ public partial class MainForm : Form
             ForeColor = Color.White,
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 6)
-        };
-    }
-
-    private static Label MakePlaceholder(string text)
-    {
-        return new Label
-        {
-            Text = text,
-            Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = Color.FromArgb(130, 130, 150)
         };
     }
 
@@ -277,6 +254,11 @@ public partial class MainForm : Form
         _runner = new ProgramRunner(_robot, _map.IsWalkable, _map.IsGoal, _map.IsHazard, level.RobotStart);
 
         _levelPanel.SetLevel(_map, _robot);
+
+        // A fresh editor for the new level: new palette, empty queue
+        _editor?.Dispose();
+        _editor = new CodeEditor(_runner, level, _queueHost, _paletteHost);
+
         _levelCompleteShown = false;
 
         Text = "RoboRoute - Level " + (index + 1) + ": " + level.Name;
@@ -295,6 +277,7 @@ public partial class MainForm : Form
 
         _robot.Update(dt);
         _runner.Update();
+        _editor?.Update();
 
         RefreshStatus();
         _levelPanel.Invalidate();
@@ -369,43 +352,5 @@ public partial class MainForm : Form
             _runner.Stop();
         else
             _runner.Start();    // does nothing if the queue is empty
-    }
-
-    // TEMPORARY: delete this button and method once the queue and palette controls exist
-    private void OnTestFillClicked(object? sender, EventArgs e)
-    {
-        if (_runner.IsRunning) return;
-
-        BlockType move = BlockType.MoveForward;
-        BlockType left = BlockType.TurnLeft;
-        BlockType right = BlockType.TurnRight;
-
-        List<Block> queue = _runner.Queue;
-        queue.Clear();
-
-        switch (_levelIndex)
-        {
-            case 0:     // First Steps
-                AddBlocks(queue, move, move, right, move, move, move, move);
-                break;
-
-            case 1:     // Staircase: Repeat 4 [ Move, Turn Right, Move, Turn Left ]
-                var loop = new Block(BlockType.Repeat) { Count = 4 };
-                AddBlocks(loop.Children, move, right, move, left);
-                queue.Add(loop);
-                break;
-
-            case 2:     // Hazardous: the detour around the hazard column
-                AddBlocks(queue, move, right, move, left, move, right, move, move, right, move, move, left, move);
-                break;
-        }
-
-        _runner.ClearStatus();
-    }
-
-    private static void AddBlocks(List<Block> list, params BlockType[] types)
-    {
-        foreach (BlockType type in types)
-            list.Add(new Block(type));
     }
 }
