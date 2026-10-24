@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="../MonoGameLibrary/MonoGameLibrary.csproj" />
+  <Project Path="../RoboRoute.Winforms/RoboRoute.Winforms.csproj" Id="03e7acde-6be2-44a7-897d-1355b5494c9d" />
   <Project Path="RoboRoute.csproj" />
 </Solution>
