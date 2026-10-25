@@ -38,4 +38,9 @@
       <HintPath>..\MonoGameLibrary\obj\Release\net9.0\MonoGameLibrary.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <ItemGroup>
+  <None Update="Levels\levels.txt">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </None>
+</ItemGroup>
 </Project>

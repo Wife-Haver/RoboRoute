@@ -1,0 +1,61 @@
+// RoboRoute built-in levels. One file, many levels.
+//
+// Each level is a block between [Level] and [End]. Lines starting with // are comments.
+// Required for every level: Name, MaxBlocks, MoveForward, TurnLeft, TurnRight, Repeat.
+// Order (built-in file only) sets the play order, lowest first.
+// Use 0 for a block type that should not be available in the level.
+//
+// Map tiles (capital letters, one row per line, all rows the same length):
+//   W = wall    F = floor    S = start (exactly one, robot faces up)    G = goal (at least one)    H = hazard
+
+[Level]
+Order=1
+Name=First Steps
+MaxBlocks=8
+MoveForward=7
+TurnLeft=0
+TurnRight=2
+Repeat=0
+Map:
+WWWWWWW
+WFFFFGW
+WFWWWWW
+WSWWWWW
+WWWWWWW
+[End]
+
+[Level]
+Order=2
+Name=Staircase
+MaxBlocks=6
+MoveForward=3
+TurnLeft=2
+TurnRight=2
+Repeat=1
+Map:
+WWWWWWWW
+WWWWFGWW
+WWWFFWWW
+WWFFWWWW
+WFFWWWWW
+WSWWWWWW
+WWWWWWWW
+[End]
+
+[Level]
+Order=3
+Name=Hazardous
+MaxBlocks=14
+MoveForward=9
+TurnLeft=3
+TurnRight=4
+Repeat=0
+Map:
+WWWWWWW
+WHFFFHW
+WFFHFFW
+WSFHFGW
+WFFHFFW
+WHFFFHW
+WWWWWWW
+[End]
