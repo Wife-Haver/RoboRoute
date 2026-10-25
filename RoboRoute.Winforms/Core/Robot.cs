@@ -38,19 +38,26 @@ namespace RoboRoute.Winforms.Core
 
         /// <summary>True while the robot is still animating a move or a turn.</summary>
         public bool IsBusy => _isMoving || _isTurning;
-
-        public Robot(Point startTile)
+        public enum Direction
         {
-            Reset(startTile);
+            Up = 0,
+            Right = 1,
+            Down = 2,
+            Left = 3
         }
 
-        /// <summary>Puts the robot back on a tile, facing up, with no animation in progress.</summary>
-        public void Reset(Point startTile)
+        public Robot(Point startTile, Direction facing)
+        {
+            Reset(startTile, facing);
+        }
+
+        /// <summary>Puts the robot back on a tile, facing the given way, with no animation in progress.</summary>
+        public void Reset(Point startTile, Direction facing)
         {
             TilePos = _targetTile = startTile;
             _pixelPos = TileToPixel(startTile);
-            _facing = 0;
-            _angle = _targetAngle = 0f;
+            _facing = (int)facing;
+            _angle = _targetAngle = _facing * MathF.PI / 2f;
             _isMoving = false;
             _isTurning = false;
         }

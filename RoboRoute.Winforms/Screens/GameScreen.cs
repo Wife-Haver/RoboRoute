@@ -77,8 +77,8 @@ public class GameScreen : UserControl
         _level = level;
 
         _map = new LevelTileMap(level.Map);
-        _robot = new Robot(level.RobotStart);
-        _runner = new ProgramRunner(_robot, _map.IsWalkable, _map.IsGoal, _map.IsHazard, level.RobotStart);
+        _robot = new Robot(level.RobotStart, level.RobotFacing);
+        _runner = new ProgramRunner(_robot, _map.IsWalkable, _map.IsGoal, _map.IsHazard, level.RobotStart, level.RobotFacing);
 
         _levelPanel.SetLevel(_map, _robot);
 

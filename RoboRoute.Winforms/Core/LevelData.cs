@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using static RoboRoute.Winforms.Core.Robot;
 
 namespace RoboRoute.Winforms.Core
 {
@@ -23,6 +24,9 @@ namespace RoboRoute.Winforms.Core
         // Found automatically from the map's Start tile, so the map is the only place that says where the robot begins
         public Point RobotStart { get; }
 
+        // Which way the robot faces at the start (set by the level file's Facing line)
+        public Direction RobotFacing { get; }
+
         public LevelData(
             string name,
             int[,] map,
@@ -30,7 +34,8 @@ namespace RoboRoute.Winforms.Core
             int moveForwardBlocks,
             int turnLeftBlocks,
             int turnRightBlocks,
-            int repeatBlocks)
+            int repeatBlocks,
+            Direction robotFacing)
         {
             Name = name;
             Map = map;
@@ -39,6 +44,7 @@ namespace RoboRoute.Winforms.Core
             TurnLeftBlocks = turnLeftBlocks;
             TurnRightBlocks = turnRightBlocks;
             RepeatBlocks = repeatBlocks;
+            RobotFacing = robotFacing;
 
             RobotStart = FindStart(name, map);
         }
@@ -49,10 +55,10 @@ namespace RoboRoute.Winforms.Core
             switch (type)
             {
                 case BlockType.MoveForward: return MoveForwardBlocks;
-                case BlockType.TurnLeft:    return TurnLeftBlocks;
-                case BlockType.TurnRight:   return TurnRightBlocks;
-                case BlockType.Repeat:      return RepeatBlocks;
-                default:                    return 0;
+                case BlockType.TurnLeft: return TurnLeftBlocks;
+                case BlockType.TurnRight: return TurnRightBlocks;
+                case BlockType.Repeat: return RepeatBlocks;
+                default: return 0;
             }
         }
 

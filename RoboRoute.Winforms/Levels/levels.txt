@@ -1,16 +1,18 @@
 // RoboRoute built-in levels.
 //
 // Each level is a block between [Level] and [End]. Lines starting with // are comments.
-// Required for every level: Name, MaxBlocks, MoveForward, TurnLeft, TurnRight, Repeat.
+// Required for every level: Name, Facing, MaxBlocks, MoveForward, TurnLeft, TurnRight, Repeat.
+// Facing is the way the robot points at the start: Up, Right, Down or Left.
 // Order (built-in file only) sets the play order, lowest first.
 // Use 0 for a block type that should not be available in the level.
 //
 // Map tiles (capital letters, one row per line, all rows the same length):
-//   W = wall    F = floor    S = start (exactly one, robot faces up)    G = goal (at least one)    H = hazard
+//   W = wall    F = floor    S = start (exactly one)    G = goal (at least one)    H = hazard
 
 [Level]
 Order=1
 Name=First Steps
+Facing=Up
 MaxBlocks=8
 MoveForward=7
 TurnLeft=0
@@ -27,6 +29,7 @@ WWWWWWW
 [Level]
 Order=2
 Name=Staircase
+Facing=Up
 MaxBlocks=6
 MoveForward=3
 TurnLeft=2
@@ -45,6 +48,7 @@ WWWWWWWW
 [Level]
 Order=3
 Name=Hazardous
+Facing=Right	
 MaxBlocks=14
 MoveForward=9
 TurnLeft=3
@@ -63,6 +67,7 @@ WWWWWWW
 [Level]
 Order=4
 Name=Cross
+Facing=Right
 MaxBlocks=9
 MoveForward=2
 TurnLeft=2
@@ -79,13 +84,14 @@ WWWWWWW
 [End]
 
 [Level]
-Order=4
+Order=5
 Name=Snaking
+Facing=Down
 MaxBlocks=14
-MoveForward=4
+MoveForward=5
 TurnLeft=2
 TurnRight=2
-Repeat=4
+Repeat=5
 Map:
 WWWWWWW
 WSHFFFW
@@ -95,4 +101,3 @@ WFHFHFW
 WFFFHGW
 WWWWWWW
 [End]
-

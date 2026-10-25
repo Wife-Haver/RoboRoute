@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using static RoboRoute.Winforms.Core.Robot;
 
 namespace RoboRoute.Winforms.Core
 {
@@ -16,6 +17,7 @@ namespace RoboRoute.Winforms.Core
         private readonly Func<Point, bool> _isGoal;
         private readonly Func<Point, bool> _isHazard;
         private readonly Point _startTile;
+        private readonly Direction _startFacing;
 
         // The program unrolled into a flat list of commands, built when Run is pressed.
         // A Repeat block with Count 3 and two children becomes those two children, three times over.
@@ -39,13 +41,15 @@ namespace RoboRoute.Winforms.Core
             Func<Point, bool> isWalkable,
             Func<Point, bool> isGoal,
             Func<Point, bool> isHazard,
-            Point startTile)
+            Point startTile,
+            Direction startFacing)
         {
             _robot = robot;
             _isWalkable = isWalkable;
             _isGoal = isGoal;
             _isHazard = isHazard;
             _startTile = startTile;
+            _startFacing = startFacing;
         }
 
         public void Start()
@@ -67,7 +71,7 @@ namespace RoboRoute.Winforms.Core
                 return;
             }
 
-            _robot.Reset(_startTile);   // always start from the beginning
+            _robot.Reset(_startTile, _startFacing);   // always start from the beginning
             IsRunning = true;
             ReachedGoal = false;
             _nextStep = 0;
@@ -80,7 +84,7 @@ namespace RoboRoute.Winforms.Core
         {
             if (!IsRunning) return;
 
-            _robot.Reset(_startTile);
+            _robot.Reset(_startTile, _startFacing);
             IsRunning = false;
             ReachedGoal = false;
             ActiveBlock = null;

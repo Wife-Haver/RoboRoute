@@ -1,4 +1,5 @@
 using System.Globalization;
+using static RoboRoute.Winforms.Core.Robot;
 
 namespace RoboRoute.Winforms.Core;
 
@@ -28,8 +29,8 @@ public sealed record LoadResult(List<LevelData> Levels, List<string> Skipped);
 // come out as the normal IOException family and are left for the caller to handle.
 public static class LevelParser
 {
-    private static readonly string[] RequiredKeys = { "Name", "MaxBlocks", "MoveForward", "TurnLeft", "TurnRight", "Repeat" };
-    private static readonly string[] KnownKeys = { "Order", "Name", "MaxBlocks", "MoveForward", "TurnLeft", "TurnRight", "Repeat" };
+    private static readonly string[] RequiredKeys = { "Name", "Facing", "MaxBlocks", "MoveForward", "TurnLeft", "TurnRight", "Repeat" };
+    private static readonly string[] KnownKeys = { "Order", "Name", "Facing", "MaxBlocks", "MoveForward", "TurnLeft", "TurnRight", "Repeat" };
 
     // The lines of one [Level] ... [End] block, each with its line number in the file
     private sealed class RawLevel
@@ -210,6 +211,19 @@ public static class LevelParser
         int turnRight = ReadInt("TurnRight", 0);
         int repeat = ReadInt("Repeat", 0);
 
+        // Facing is a word, not a number
+        (int facingLine, string facingText) = values["Facing"];
+        Direction facing;
+        switch (facingText.ToLowerInvariant())
+        {
+            case "up": facing = Direction.Up; break;
+            case "right": facing = Direction.Right; break;
+            case "down": facing = Direction.Down; break;
+            case "left": facing = Direction.Left; break;
+            default:
+                throw Fail(facingLine, label + ": 'Facing' must be Up, Right, Down or Left, but it is \"" + facingText + "\".");
+        }
+
         if (moveForward + turnLeft + turnRight + repeat == 0)
             throw Fail(raw.StartLine, label + " gives the player no blocks (all four counts are 0).");
 
@@ -246,7 +260,7 @@ public static class LevelParser
         if (goals == 0)
             throw Fail(raw.StartLine, label + " has no goal tile (G).");
 
-        return new LevelData(values["Name"].Text, map, maxBlocks, moveForward, turnLeft, turnRight, repeat);
+        return new LevelData(values["Name"].Text, map, maxBlocks, moveForward, turnLeft, turnRight, repeat, facing);
     }
 
     // Returns a tile ID from LevelTileMap, or -1 for a letter that isn't a tile
@@ -259,7 +273,7 @@ public static class LevelParser
             case 'S': return LevelTileMap.Start;
             case 'G': return LevelTileMap.Goal;
             case 'H': return LevelTileMap.Hazard;
-            default:  return -1;
+            default: return -1;
         }
     }
 }
