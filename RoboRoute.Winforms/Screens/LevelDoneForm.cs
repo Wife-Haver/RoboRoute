@@ -20,7 +20,7 @@ public partial class LevelDoneForm : Form
     {
         InitializeComponent();
 
-        lblTitle.Text = "Level " + levelNumber + " done!";
+        lblTitle.Text = levelNumber > 0 ? "Level " + levelNumber + " done!" : "Level done!";
         btnNext.Enabled = hasNextLevel;     // nothing to go to after the last level
 
         AcceptButton = hasNextLevel ? btnNext : btnMenu;

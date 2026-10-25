@@ -37,7 +37,7 @@ public class GameScreen : UserControl
     private readonly System.Windows.Forms.Timer _timer = new System.Windows.Forms.Timer();
     private readonly Stopwatch _clock = new Stopwatch();
 
-    private int _levelIndex;
+    private LevelData _level = null!;
     private LevelTileMap _map = null!;
     private Robot _robot = null!;
     private ProgramRunner _runner = null!;
@@ -46,12 +46,12 @@ public class GameScreen : UserControl
     private bool _assetsLoaded;
 
     // Raised when the program ended on the goal. The int is the index of the level just finished.
-    public event Action<int>? LevelCompleted;
+    public event Action? LevelCompleted;
 
     // Raised when the player clicks the Menu button
     public event Action? MenuRequested;
 
-    public int LevelIndex => _levelIndex;
+    
 
     public GameScreen()
     {
@@ -61,7 +61,7 @@ public class GameScreen : UserControl
         _timer.Interval = 16;
         _timer.Tick += OnTick;
 
-        LoadLevel(0);
+
     }
 
     // ------------------------------------------------------------------
@@ -69,10 +69,9 @@ public class GameScreen : UserControl
     // ------------------------------------------------------------------
 
     // Builds everything that belongs to one level. Also used to restart a level.
-    public void LoadLevel(int index)
+    public void LoadLevel(LevelData level)
     {
-        _levelIndex = index;
-        LevelData level = Levels.All[index];
+        _level = level;
 
         _map = new LevelTileMap(level.Map);
         _robot = new Robot(level.RobotStart);
@@ -305,7 +304,7 @@ public class GameScreen : UserControl
         {
             // Stop first: the popup the listener opens runs its own message loop
             Pause();
-            LevelCompleted?.Invoke(_levelIndex);
+            LevelCompleted?.Invoke();
         }
     }
 
@@ -318,7 +317,7 @@ public class GameScreen : UserControl
         foreach (Block block in _runner.Queue)
             used += block.TotalBlocks();
 
-        int max = Levels.All[_levelIndex].MaxBlocksAllowed;
+        int max = _level.MaxBlocksAllowed;
         _blockCounter.Text = "Blocks " + used + "/" + max;
         _blockCounter.ForeColor = used >= max ? Color.FromArgb(255, 200, 100) : Color.White;
 

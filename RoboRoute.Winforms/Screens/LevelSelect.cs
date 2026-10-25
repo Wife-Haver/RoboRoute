@@ -5,6 +5,8 @@ namespace RoboRoute.Winforms.Screens;
 // so adding a level to Levels.cs adds a button automatically.
 //
 // To redesign it: keep a container named flowLevels (a FlowLayoutPanel works well) and a button named btnBack.
+
+
 public partial class LevelSelect : UserControl
 {
     // The int is the level's index in Levels.All (0 = first level)
@@ -46,4 +48,16 @@ public partial class LevelSelect : UserControl
     }
 
     private void btnBack_Click(object? sender, EventArgs e) => BackClicked?.Invoke();
+
+    private void openFileDialog1_FileOk(object sender, System.ComponentModel.CancelEventArgs e)
+    {
+
+    }
+
+    public event Action<string>? LevelFileChosen;
+    private void btnImport_Click(object sender, EventArgs e)
+    {
+        if (openLevelDialog.ShowDialog(this) == DialogResult.OK)
+            LevelFileChosen?.Invoke(openLevelDialog.FileName);
+    }
 }
