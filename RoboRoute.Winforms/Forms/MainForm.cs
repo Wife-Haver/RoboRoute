@@ -9,7 +9,7 @@ namespace RoboRoute.Winforms;
 public partial class MainForm : Form
 {
     private readonly Panel _host = new Panel();     // the current screen sits in here
-    //private readonly MainMenuScreen _menu = new MainMenuScreen();
+    private readonly MainMenuScreen _menu = new MainMenuScreen();
     private readonly LevelSelect _levelSelect = new LevelSelect();
     private readonly GameScreen _game = new GameScreen();
 
@@ -26,18 +26,18 @@ public partial class MainForm : Form
         Controls.Add(_host);
 
         // ---- Wiring: which event leads where ----
-        //_menu.PlayClicked += () => ShowScreen(_levelSelect);
-        //_menu.QuitClicked += Close;
+        _menu.PlayClicked += () => ShowScreen(_levelSelect);
+        _menu.QuitClicked += Close;
 
         _levelSelect.LevelChosen += StartLevel;
-        //_levelSelect.BackClicked += () => ShowScreen(_menu);
+        _levelSelect.BackClicked += () => ShowScreen(_menu);
 
         _game.MenuRequested += ShowMenuFromGame;
         _game.LevelCompleted += OnLevelCompleted;
 
         _levelSelect.SetLevels(Levels.All.Select(level => level.Name).ToList());
 
-        //ShowScreen(_menu);
+        ShowScreen(_menu);
     }
 
     // Swaps the visible screen. The game screen's timer only runs while it is the one showing.
@@ -59,10 +59,10 @@ public partial class MainForm : Form
         ShowScreen(_game);
     }
 
-    //private void ShowMenuFromGame()
-    //{
-    //    ShowScreen(_menu);
-    //}
+    private void ShowMenuFromGame()
+    {
+        ShowScreen(_menu);
+    }
 
     private void OnLevelCompleted(int levelIndex)
     {
@@ -77,9 +77,9 @@ public partial class MainForm : Form
                 StartLevel(levelIndex + 1);
                 break;
 
-            //case LevelDoneChoice.MainMenu:
-            //    ShowScreen(_menu);
-            //    break;
+            case LevelDoneChoice.MainMenu:
+                ShowScreen(_menu);
+                break;
 
             default:    // Restart (also what you get if the window is closed some other way)
                 StartLevel(levelIndex);

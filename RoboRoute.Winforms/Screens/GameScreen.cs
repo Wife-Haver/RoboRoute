@@ -32,7 +32,7 @@ public class GameScreen : UserControl
     private readonly Label _blockCounter = new Label();
     private readonly Label _statusLabel = new Label();
     private readonly Button _runButton = new Button();
-    private readonly Button _menuButton = new Button();
+    
 
     private readonly System.Windows.Forms.Timer _timer = new System.Windows.Forms.Timer();
     private readonly Stopwatch _clock = new Stopwatch();
@@ -199,29 +199,23 @@ public class GameScreen : UserControl
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 3,
+            RowCount = 2    ,
             Padding = new Padding(10),
             BackColor = PaletteColor
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50f));
+        
 
         layout.Controls.Add(MakeLabel("Blocks", HeaderFont), 0, 0);
 
         _paletteHost.Dock = DockStyle.Fill;
         _paletteHost.BackColor = Color.FromArgb(36, 28, 44);
-        _paletteHost.Margin = new Padding(0, 6, 0, 6);
+        _paletteHost.Margin = new Padding(0, 6, 0, 0);
         layout.Controls.Add(_paletteHost, 0, 1);
 
-        _menuButton.Text = "MENU";
-        _menuButton.Dock = DockStyle.Fill;
-        _menuButton.Margin = new Padding(0);
-        _menuButton.Font = ButtonFont;
-        StyleButton(_menuButton, IdleColor);
-        _menuButton.Click += (sender, e) => MenuRequested?.Invoke();
-        layout.Controls.Add(_menuButton, 0, 2);
+        
 
         return layout;
     }
