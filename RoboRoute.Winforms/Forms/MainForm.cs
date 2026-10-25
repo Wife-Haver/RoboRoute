@@ -14,6 +14,7 @@ public partial class MainForm : Form
     private readonly MainMenuScreen _menu = new MainMenuScreen();
     private readonly LevelSelect _levelSelect = new LevelSelect();
     private readonly GameScreen _game = new GameScreen();
+    private readonly PauseScreen _pause = new PauseScreen();
 
     // Which levels are beaten, and the best score for each (loaded from, and saved to, a file)
     private readonly SaveData _save = SaveData.Load();
@@ -49,8 +50,12 @@ public partial class MainForm : Form
         _levelSelect.LevelChosen += index => StartLevel(Levels.All[index], index);
         _levelSelect.BackClicked += () => ShowScreen(_menu);
 
-        _game.MenuRequested += () => ShowScreen(_menu);
+        _game.PauseRequested += () => ShowScreen(_pause);
         _game.LevelCompleted += OnLevelCompleted;
+
+        _pause.MainMenuClicked += () => ShowScreen(_menu);
+        _pause.RestartLevelClicked += RestartCurrentLevel;
+        _pause.SelectLevelClicked += ShowLevelSelect;
 
         ShowScreen(_menu);
 
@@ -139,6 +144,12 @@ public partial class MainForm : Form
 
         _game.LoadLevel(level);
         ShowScreen(_game);
+    }
+
+    private void RestartCurrentLevel()
+    {
+        if (_currentLevel != null)
+            StartLevel(_currentLevel, _currentIndex);
     }
 
     private void OnLevelCompleted()

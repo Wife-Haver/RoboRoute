@@ -11,7 +11,7 @@ namespace RoboRoute.Winforms.Screens;
 //   LoadLevel(i)  - set up level i
 //   Resume()      - start the game timer (call after the screen is shown)
 //   Pause()       - stop the game timer (call before the screen is hidden or a popup opens)
-//   LevelCompleted(levelIndex), MenuRequested - what the screen tells MainForm
+//   LevelCompleted(levelIndex), PauseRequested - what the screen tells MainForm
 public class GameScreen : UserControl
 {
     private static readonly Color PanelColor = Color.FromArgb(30, 30, 40);
@@ -32,6 +32,8 @@ public class GameScreen : UserControl
     private readonly Label _blockCounter = new Label();
     private readonly Label _statusLabel = new Label();
     private readonly Button _runButton = new Button();
+    private readonly PictureBox _pauseButton = new PictureBox();
+    private Image? _pauseImage;
     
 
     private readonly System.Windows.Forms.Timer _timer = new System.Windows.Forms.Timer();
@@ -48,8 +50,8 @@ public class GameScreen : UserControl
     // Raised when the program ended on the goal. The int is the index of the level just finished.
     public event Action? LevelCompleted;
 
-    // Raised when the player clicks the Menu button
-    public event Action? MenuRequested;
+    // Raised when the player clicks the pause button
+    public event Action? PauseRequested;
 
     // Total blocks in the queue, invlcudingblocks inside Repeat blocks
     public int BlocksUsed => _runner.Queue.Sum(block => block.TotalBlocks());
@@ -111,6 +113,7 @@ public class GameScreen : UserControl
             _timer.Stop();
             _timer.Dispose();
             _editor?.Dispose();
+            _pauseImage?.Dispose();
         }
         base.Dispose(disposing);
     }
@@ -142,6 +145,9 @@ public class GameScreen : UserControl
         _mainSplit.Panel2.Controls.Add(_editorSplit);
 
         Controls.Add(_mainSplit);
+        ConfigurePauseButton();
+        Controls.Add(_pauseButton);
+        _pauseButton.BringToFront();
 
         ResumeLayout(true);
     }
@@ -193,6 +199,25 @@ public class GameScreen : UserControl
         layout.SetColumnSpan(_runButton, 2);
 
         return layout;
+    }
+
+    private void ConfigurePauseButton()
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "Assets", "INTERFACE", "Vector.png");
+        if (File.Exists(path))
+        {
+            using Image source = Image.FromFile(path);
+            _pauseImage = new Bitmap(source);
+            _pauseButton.Image = _pauseImage;
+        }
+
+        _pauseButton.BackColor = Color.Transparent;
+        _pauseButton.Cursor = Cursors.Hand;
+        _pauseButton.SizeMode = PictureBoxSizeMode.Zoom;
+        _pauseButton.TabStop = false;
+        _pauseButton.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+        _pauseButton.SetBounds(12, 12, 58, 58);
+        _pauseButton.Click += (_, _) => PauseRequested?.Invoke();
     }
 
     private Control BuildPalettePanel()
