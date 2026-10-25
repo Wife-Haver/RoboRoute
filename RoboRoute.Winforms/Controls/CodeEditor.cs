@@ -70,8 +70,8 @@ public class CodeEditor : IDisposable
             var item = new PaletteItem(type)
             {
                 Location = new Point(PaletteMargin, y),
-                Width = Math.Max(60, _paletteHost.ClientSize.Width - PaletteMargin * 2),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+                //Width = Math.Max(60, _paletteHost.ClientSize.Width - PaletteMargin * 2),
+                //Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
             item.DragRequested += StartDragFromPalette;
             _paletteHost.Controls.Add(item);
@@ -80,10 +80,26 @@ public class CodeEditor : IDisposable
             y += item.Height + PaletteGap;
         }
 
+        LayoutPalette();
+        _paletteHost.ClientSizeChanged += OnPaletteHostSizeChanged;
+
         // Dropping a block back onto the palette throws it away
         AttachDragHandlers(_paletteHost);
 
         Rebuild();
+    }
+    private void OnPaletteHostSizeChanged(object? sender, EventArgs e)
+    {
+        LayoutPalette();
+    }
+
+    // Makes every palette block as wide as the palette panel currently is
+    private void LayoutPalette()
+    {
+        int width = Math.Max(60, _paletteHost.ClientSize.Width - PaletteMargin * 2);
+
+        foreach (PaletteItem item in _paletteItems)
+            item.Width = width;
     }
 
     public void Dispose()
@@ -99,6 +115,7 @@ public class CodeEditor : IDisposable
         _paletteHost.DragOver -= OnDragOver;
         _paletteHost.DragLeave -= OnDragLeave;
         _paletteHost.DragDrop -= OnDragDrop;
+        _paletteHost.ClientSizeChanged -= OnPaletteHostSizeChanged;
 
         ClearHost(_queueHost);
         ClearHost(_paletteHost);
