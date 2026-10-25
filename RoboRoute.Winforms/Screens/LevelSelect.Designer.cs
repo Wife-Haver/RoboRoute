@@ -20,7 +20,6 @@ partial class LevelSelect
         lblTitle = new Label();
         flowLevels = new FlowLayoutPanel();
         btnBack = new Button();
-        btnImport = new Button();
         openLevelDialog = new OpenFileDialog();
         SuspendLayout();
         // 
@@ -59,16 +58,6 @@ partial class LevelSelect
         btnBack.UseVisualStyleBackColor = true;
         btnBack.Click += btnBack_Click;
         // 
-        // btnImport
-        // 
-        btnImport.Location = new Point(1029, 716);
-        btnImport.Name = "btnImport";
-        btnImport.Size = new Size(160, 60);
-        btnImport.TabIndex = 3;
-        btnImport.Text = "button1";
-        btnImport.UseVisualStyleBackColor = true;
-        btnImport.Click += btnImport_Click;
-        // 
         // openLevelDialog
         // 
         openLevelDialog.Filter = "Level files (*.txt)|*.txt|All files (*.*)|*.*";
@@ -80,7 +69,6 @@ partial class LevelSelect
         AutoScaleDimensions = new SizeF(8F, 20F);
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = Color.FromArgb(30, 30, 40);
-        Controls.Add(btnImport);
         Controls.Add(btnBack);
         Controls.Add(flowLevels);
         Controls.Add(lblTitle);
@@ -95,6 +83,5 @@ partial class LevelSelect
     private Label lblTitle;
     private FlowLayoutPanel flowLevels;
     private Button btnBack;
-    private Button btnImport;
     private OpenFileDialog openLevelDialog;
 }

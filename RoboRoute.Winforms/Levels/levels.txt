@@ -1,4 +1,4 @@
-// RoboRoute built-in levels. One file, many levels.
+// RoboRoute built-in levels.
 //
 // Each level is a block between [Level] and [End]. Lines starting with // are comments.
 // Required for every level: Name, MaxBlocks, MoveForward, TurnLeft, TurnRight, Repeat.
@@ -59,3 +59,40 @@ WFFHFFW
 WHFFFHW
 WWWWWWW
 [End]
+
+[Level]
+Order=4
+Name=Cross
+MaxBlocks=9
+MoveForward=2
+TurnLeft=2
+TurnRight=2
+Repeat=2
+Map:
+WWWWWWW
+WSFFFFW
+WFFHFFW
+WFHHHFW
+WFFHFFW
+WFFFFGW
+WWWWWWW
+[End]
+
+[Level]
+Order=4
+Name=Snaking
+MaxBlocks=14
+MoveForward=4
+TurnLeft=2
+TurnRight=2
+Repeat=4
+Map:
+WWWWWWW
+WSHFFFW
+WFHFHFW
+WFHFHFW
+WFHFHFW
+WFFFHGW
+WWWWWWW
+[End]
+

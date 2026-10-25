@@ -55,9 +55,5 @@ public partial class LevelSelect : UserControl
     }
 
     public event Action<string>? LevelFileChosen;
-    private void btnImport_Click(object sender, EventArgs e)
-    {
-        if (openLevelDialog.ShowDialog(this) == DialogResult.OK)
-            LevelFileChosen?.Invoke(openLevelDialog.FileName);
-    }
+
 }
