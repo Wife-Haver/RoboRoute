@@ -251,7 +251,7 @@ public class CodeEditor : IDisposable
     // ------------------------------------------------------------------
 
     // All blocks in a list, loop contents included, skipping "exclude" and everything inside it
-    private static int CountTotal(List<Block> list, Block? exclude)
+    private static int CountTotal(IReadOnlyList<Block> list, Block? exclude)
     {
         int total = 0;
         foreach (Block block in list)
@@ -263,7 +263,7 @@ public class CodeEditor : IDisposable
     }
 
     // Blocks of one type in a list, loop contents included, skipping "exclude" and everything inside it
-    private static int CountType(List<Block> list, BlockType type, Block? exclude)
+    private static int CountType(IReadOnlyList<Block> list, BlockType type, Block? exclude)
     {
         int count = 0;
         foreach (Block block in list)
@@ -320,7 +320,7 @@ public class CodeEditor : IDisposable
     private void StartDragFromPalette(PaletteItem item)
     {
         if (_runner.IsRunning || item.Remaining <= 0) return;
-        BeginDrag(item, new DragPayload(new Block(item.Type), null));
+        BeginDrag(item, new DragPayload(Block.Create(item.Type), null));
     }
 
     private void StartDragFromQueue(BlockView view)

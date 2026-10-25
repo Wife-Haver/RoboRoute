@@ -125,44 +125,18 @@ namespace RoboRoute.Winforms.Core
             ActiveBlock = _steps[_nextStep];
             _nextStep++;
 
-            switch (ActiveBlock.Type)
-            {
-                case BlockType.MoveForward:
-                    if (!_robot.MoveForward(_isWalkable))
-                        Finish("Blocked by a wall at step " + _nextStep, Color.FromArgb(255, 120, 120));
-                    break;
-
-                case BlockType.TurnLeft:
-                    _robot.TurnLeft();
-                    break;
-
-                case BlockType.TurnRight:
-                    _robot.TurnRight();
-                    break;
-            }
+            // Each block knows how to do its own action: no switch on the block's type needed
+            if (!ActiveBlock.Perform(_robot, _isWalkable))
+                Finish("Blocked by a wall at step " + _nextStep, Color.FromArgb(255, 120, 120));
         }
 
-        // Flattens a list of blocks into _steps, repeating loop bodies Count times.
-        // Returns false if the program would be longer than MaxSteps.
+        // Flattens the program into _steps. Each block adds its own commands (a Repeat block adds its contents
+        // several times over). Returns false if the program would be longer than MaxSteps.
         private bool Unroll(List<Block> blocks)
         {
             foreach (Block block in blocks)
             {
-                if (block.IsLoop)
-                {
-                    // Skipping loops with nothing inside also keeps empty nested loops from burning time
-                    if (!block.HasCommand()) continue;
-
-                    for (int i = 0; i < block.Count; i++)
-                    {
-                        if (!Unroll(block.Children)) return false;
-                    }
-                }
-                else
-                {
-                    _steps.Add(block);
-                    if (_steps.Count > MaxSteps) return false;
-                }
+                if (!block.AppendSteps(_steps, MaxSteps)) return false;
             }
             return true;
         }

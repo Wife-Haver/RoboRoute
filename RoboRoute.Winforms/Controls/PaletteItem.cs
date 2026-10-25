@@ -8,6 +8,8 @@ public class PaletteItem : Control
 {
     private const int BadgeSize = 26;
 
+    // A sample block of this type, only used to get its colour and name for drawing
+    private readonly Block _sample;
     private int _remaining;
     private bool _pressed;
     private Point _mouseDownAt;
@@ -32,6 +34,7 @@ public class PaletteItem : Control
     public PaletteItem(BlockType type)
     {
         Type = type;
+        _sample = Block.Create(type);
         DoubleBuffered = true;
         Height = 40;
         Cursor = Cursors.Hand;
@@ -44,7 +47,7 @@ public class PaletteItem : Control
         Graphics g = e.Graphics;
         bool available = _remaining > 0;
 
-        Color fill = BlockInfo.GetColor(Type);
+        Color fill = _sample.FillColor;
         if (!available)
             fill = UiStyle.Blend(fill, BackColor, 0.65f);
 
@@ -52,7 +55,7 @@ public class PaletteItem : Control
         var face = new Rectangle(0, 0, Width, Height);
         UiStyle.PaintBlock(g, face, fill, null, false, !available);
         TextRenderer.DrawText(
-            g, BlockInfo.GetLabel(Type), UiStyle.BlockFont,
+            g, _sample.DisplayName, UiStyle.BlockFont,
             new Rectangle(8, 0, Math.Max(0, Width - BadgeSize - 24), Height),
             available ? Color.White : Color.Silver,
             TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis);

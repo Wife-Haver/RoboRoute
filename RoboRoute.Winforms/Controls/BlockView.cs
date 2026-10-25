@@ -67,16 +67,17 @@ public class BlockView : Panel
         DoubleBuffered = true;
         Cursor = Cursors.Hand;
 
-        if (!model.IsLoop) return;
+        // Only a Repeat block has anything inside it
+        if (model is not RepeatBlock repeat) return;
 
-        Children = new QueueList(model.Children, model, ownerList);
+        Children = new QueueList(repeat.Body, model, ownerList);
         Controls.Add(Children);
 
         _countBox = new NumericUpDown
         {
-            Minimum = Block.MinCount,
-            Maximum = Block.MaxCount,
-            Value = Math.Clamp(model.Count, Block.MinCount, Block.MaxCount),
+            Minimum = RepeatBlock.MinCount,
+            Maximum = RepeatBlock.MaxCount,
+            Value = Math.Clamp(repeat.Count, RepeatBlock.MinCount, RepeatBlock.MaxCount),
             Width = 56,
             TextAlign = HorizontalAlignment.Center,
             BorderStyle = BorderStyle.FixedSingle,
@@ -84,7 +85,7 @@ public class BlockView : Panel
         };
         _countBox.ValueChanged += (sender, e) =>
         {
-            Model.Count = (int)_countBox.Value;
+            repeat.Count = (int)_countBox.Value;
             CountChanged?.Invoke();
         };
         Controls.Add(_countBox);
@@ -120,11 +121,11 @@ public class BlockView : Panel
         base.OnPaint(e);
 
         Graphics g = e.Graphics;
-        Color color = BlockInfo.GetColor(Model.Type);
+        Color color = Model.FillColor;
 
         if (!Model.IsLoop)
         {
-            UiStyle.PaintBlock(g, new Rectangle(0, 0, Width, BlockHeight), color, BlockInfo.GetLabel(Model.Type), _isActive, false);
+            UiStyle.PaintBlock(g, new Rectangle(0, 0, Width, BlockHeight), color, Model.DisplayName, _isActive, false);
             return;
         }
 
