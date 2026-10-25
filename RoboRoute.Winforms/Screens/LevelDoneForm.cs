@@ -37,4 +37,10 @@ public partial class LevelDoneForm : Form
         Choice = choice;
         DialogResult = DialogResult.OK;     // closes the window
     }
+    public void ShowResult(int blocksUsed, int best, bool isNewBest)
+    {
+        lblResult.Text = isNewBest
+            ? "Blocks used: " + blocksUsed + "  (new best!)"
+            : "Blocks used: " + blocksUsed + "   Best: " + best;
+    }
 }

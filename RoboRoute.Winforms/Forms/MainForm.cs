@@ -1,6 +1,7 @@
 using RoboRoute.Winforms.Core;
 using RoboRoute.Winforms.Screens;
-   // System.Windows.Forms also has a MainMenu
+using static RoboRoute.Winforms.Screens.LevelSelect;
+ 
 
 // NOTE: this namespace must match the one at the top of MainForm.Designer.cs.
 namespace RoboRoute.Winforms;
@@ -14,11 +15,14 @@ public partial class MainForm : Form
     private readonly LevelSelect _levelSelect = new LevelSelect();
     private readonly GameScreen _game = new GameScreen();
 
-    // The level being played. _currentIndex is its place in Levels.All, or -1 for an imported level.
-    private LevelData? _currentLevel;
-    private int _currentIndex = -1;
+    // Which levels are beaten, and the best score for each (loaded from, and saved to, a file)
+    private readonly SaveData _save = SaveData.Load();
 
-    // Problems found while loading the built-in levels, shown once the window is up
+    // The level being played, and its place in Levels.All
+    private LevelData? _currentLevel;
+    private int _currentIndex;
+
+    // Problems found while loading levels or the save file, shown once the window is up
     private string? _startupMessage;
 
     public MainForm()
@@ -35,25 +39,25 @@ public partial class MainForm : Form
 
         LoadBuiltInLevels();
 
+        if (_save.LoadWarning != null)
+            _startupMessage = (_startupMessage == null ? "" : _startupMessage + "\n\n") + _save.LoadWarning;
+
         // ---- Wiring: which event leads where ----
-        _menu.PlayClicked += () => ShowScreen(_levelSelect);
+        _menu.PlayClicked += ShowLevelSelect;
         _menu.QuitClicked += Close;
 
         _levelSelect.LevelChosen += index => StartLevel(Levels.All[index], index);
-        _levelSelect.LevelFileChosen += ImportLevel;
         _levelSelect.BackClicked += () => ShowScreen(_menu);
 
         _game.MenuRequested += () => ShowScreen(_menu);
         _game.LevelCompleted += OnLevelCompleted;
-
-        _levelSelect.SetLevels(Levels.All.Select(level => level.Name).ToList());
 
         ShowScreen(_menu);
 
         Shown += (sender, e) =>
         {
             if (_startupMessage != null)
-                MessageBox.Show(this, _startupMessage, "Level problem", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, _startupMessage, "Problem loading", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         };
     }
 
@@ -79,31 +83,36 @@ public partial class MainForm : Form
         catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
         {
             // FileNotFoundException and DirectoryNotFoundException are both IOExceptions
-            _startupMessage = "The built-in levels couldn't be read:\n\n" + ex.Message +
-                              "\n\nYou can still use Import Level on the level select screen.";
+            _startupMessage = "The built-in levels couldn't be read:\n\n" + ex.Message;
         }
 
         if (Levels.All.Count == 0 && _startupMessage == null)
             _startupMessage = "No built-in levels were found in " + Levels.FilePath + ".";
     }
 
-    // Called when the player picks a file with the Import Level button.
-    // Reads the first level in the file and plays it, or explains what is wrong with the file.
-    private void ImportLevel(string path)
+    // ------------------------------------------------------------------
+    //  Progress: locking levels and scores
+    // ------------------------------------------------------------------
+
+    // The first level is always open; every other level opens once the one before it has been beaten
+    private bool IsUnlocked(int index)
     {
-        try
+        return index == 0 || _save.IsCompleted(Levels.All[index - 1].Name);
+    }
+
+    // Rebuilds the level buttons from the current progress, then shows the level select screen
+    private void ShowLevelSelect()
+    {
+        var entries = new List<LevelEntry>();
+
+        for (int i = 0; i < Levels.All.Count; i++)
         {
-            LevelData level = LevelParser.LoadFirstLevel(path);
-            StartLevel(level, -1);
+            string name = Levels.All[i].Name;
+            entries.Add(new LevelEntry(name, IsUnlocked(i), _save.GetBest(name)));
         }
-        catch (LevelFormatException ex)
-        {
-            MessageBox.Show(this, ex.Message, "Can't load this level", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        }
-        catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
-        {
-            MessageBox.Show(this, "The file couldn't be read:\n\n" + ex.Message, "Can't load this level", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
+
+        _levelSelect.SetLevels(entries);
+        ShowScreen(_levelSelect);
     }
 
     // ------------------------------------------------------------------
@@ -123,7 +132,6 @@ public partial class MainForm : Form
             _game.Resume();
     }
 
-    // index = the level's place in Levels.All, or -1 for an imported level
     private void StartLevel(LevelData level, int index)
     {
         _currentLevel = level;
@@ -135,11 +143,23 @@ public partial class MainForm : Form
 
     private void OnLevelCompleted()
     {
-        // An imported level has no "next": it was only loaded to be played once
-        bool hasNext = _currentIndex >= 0 && _currentIndex + 1 < Levels.All.Count;
-        int levelNumber = _currentIndex >= 0 ? _currentIndex + 1 : 0;
+        LevelData level = _currentLevel!;
+        int blocksUsed = _game.BlocksUsed;
 
-        using var popup = new LevelDoneForm(levelNumber, hasNext);
+        // Save the result first, so the next level is already unlocked when the popup closes
+        bool isNewBest = _save.Record(level.Name, blocksUsed);
+        if (isNewBest)
+        {
+            string? error = _save.Save();
+            if (error != null)
+                MessageBox.Show(this, error, "Couldn't save", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        bool hasNext = _currentIndex + 1 < Levels.All.Count;
+        int best = _save.GetBest(level.Name) ?? blocksUsed;
+
+        using var popup = new LevelDoneForm(_currentIndex + 1, hasNext);
+        popup.ShowResult(blocksUsed, best, isNewBest);
         popup.ShowDialog(this);
 
         switch (popup.Choice)
@@ -153,7 +173,7 @@ public partial class MainForm : Form
                 break;
 
             default:    // Restart (also what you get if the window is closed some other way)
-                StartLevel(_currentLevel!, _currentIndex);
+                StartLevel(level, _currentIndex);
                 break;
         }
     }

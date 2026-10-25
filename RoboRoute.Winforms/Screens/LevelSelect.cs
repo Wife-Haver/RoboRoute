@@ -9,7 +9,7 @@ namespace RoboRoute.Winforms.Screens;
 
 public partial class LevelSelect : UserControl
 {
-    // The int is the level's index in Levels.All (0 = first level)
+
     public event Action<int>? LevelChosen;
     public event Action? BackClicked;
 
@@ -19,7 +19,9 @@ public partial class LevelSelect : UserControl
     }
 
     // Makes one button per level name
-    public void SetLevels(IReadOnlyList<string> names)
+    public record LevelEntry(string Name, bool Unlocked, int? BestBlocks);
+
+    public void SetLevels(IReadOnlyList<LevelEntry> levels)
     {
         flowLevels.SuspendLayout();
 
@@ -29,16 +31,22 @@ public partial class LevelSelect : UserControl
             old.Dispose();
         }
 
-        for (int i = 0; i < names.Count; i++)
+        for (int i = 0; i < levels.Count; i++)
         {
-            int index = i;      // each button remembers its own level (a loop variable would not work here)
+            int index = i;
+            LevelEntry entry = levels[i];
+
+            string status = !entry.Unlocked ? "Locked"
+                          : entry.BestBlocks is int best ? "Best: " + best
+                          : "Not done yet";
 
             var button = new Button
             {
-                Text = (i + 1) + "\n" + names[i],
+                Text = (i + 1) + "\n" + entry.Name + "\n" + status,
                 Size = new Size(140, 100),
-                Font = new Font("Segoe UI", 12F, FontStyle.Bold),
-                Margin = new Padding(10)
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                Margin = new Padding(10),
+                Enabled = entry.Unlocked
             };
             button.Click += (sender, e) => LevelChosen?.Invoke(index);
             flowLevels.Controls.Add(button);

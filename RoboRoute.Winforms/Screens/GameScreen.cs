@@ -51,7 +51,10 @@ public class GameScreen : UserControl
     // Raised when the player clicks the Menu button
     public event Action? MenuRequested;
 
-    
+    // Total blocks in the queue, invlcudingblocks inside Repeat blocks
+    public int BlocksUsed => _runner.Queue.Sum(block => block.TotalBlocks());
+
+
 
     public GameScreen()
     {
@@ -62,7 +65,7 @@ public class GameScreen : UserControl
         _timer.Tick += OnTick;
 
 
-    }
+    }   
 
     // ------------------------------------------------------------------
     //  Public API
