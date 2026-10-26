@@ -8,12 +8,13 @@ namespace RoboRoute.Winforms;
 
 // The window. It owns one screen at a time (main menu, level select or the game) and decides what
 // happens when a screen raises an event. All the "go to screen X" logic lives here, in one place.
-public partial class MainForm : Form
+public partial class MainForm : Form, IMessageFilter
 {
     private readonly Panel _host = new Panel();     // the current screen sits in here
     private readonly MainMenuScreen _menu = new MainMenuScreen();
     private readonly LevelSelect _levelSelect = new LevelSelect();
     private readonly GameScreen _game = new GameScreen();
+    private readonly PauseScreen _pause = new PauseScreen();
 
     // Which levels are beaten, and the best score for each (loaded from, and saved to, a file)
     private readonly SaveData _save = SaveData.Load();
@@ -21,6 +22,7 @@ public partial class MainForm : Form
     // The level being played, and its place in Levels.All
     private LevelData? _currentLevel;
     private int _currentIndex;
+    private bool _escapeDown;
 
     // Problems found while loading levels or the save file, shown once the window is up
     private string? _startupMessage;
@@ -33,6 +35,8 @@ public partial class MainForm : Form
         ClientSize = new Size(1280, 720);
         MinimumSize = new Size(900, 500);
         StartPosition = FormStartPosition.CenterScreen;
+        Application.AddMessageFilter(this);
+        FormClosed += (_, _) => Application.RemoveMessageFilter(this);
 
         _host.Dock = DockStyle.Fill;
         Controls.Add(_host);
@@ -49,8 +53,12 @@ public partial class MainForm : Form
         _levelSelect.LevelChosen += index => StartLevel(Levels.All[index], index);
         _levelSelect.BackClicked += () => ShowScreen(_menu);
 
-        _game.PauseRequested += ShowPauseMenu;
+        _game.PauseRequested += () => ShowScreen(_pause);
         _game.LevelCompleted += OnLevelCompleted;
+
+        _pause.MainMenuClicked += () => ShowScreen(_menu);
+        _pause.RestartLevelClicked += RestartCurrentLevel;
+        _pause.SelectLevelClicked += ShowLevelSelect;
 
         ShowScreen(_menu);
 
@@ -60,42 +68,41 @@ public partial class MainForm : Form
                 MessageBox.Show(this, _startupMessage, "Problem loading", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         };
     }
-    // Esc on the game screen opens the pause menu
-    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    public bool PreFilterMessage(ref Message message)
     {
-        if (keyData == Keys.Escape && _currentLevel != null && _host.Controls.Contains(_game))
+        const int WmKeyDown = 0x0100;
+        const int WmKeyUp = 0x0101;
+
+        if (message.Msg == WmKeyUp && message.WParam.ToInt32() == (int)Keys.Escape)
         {
-            ShowPauseMenu();
-            return true;
+            _escapeDown = false;
+            return false;
         }
-        return base.ProcessCmdKey(ref msg, keyData);
-    }
 
-    private void ShowPauseMenu()
-    {
-        _game.Pause();      // freezes the robot and the timer while the popup is open
-
-        using var pause = new PauseForm();
-        pause.ShowDialog(this);
-
-        switch (pause.Choice)
+        if (message.Msg == WmKeyDown &&
+            message.WParam.ToInt32() == (int)Keys.Escape &&
+            !_escapeDown &&
+            Form.ActiveForm == this)
         {
-            case PauseChoice.Restart:
-                StartLevel(_currentLevel!, _currentIndex);
-                break;
+            _escapeDown = true;
 
-            case PauseChoice.LevelSelect:
-                ShowLevelSelect();
-                break;
+            if (_currentLevel == null)
+                return false;
 
-            case PauseChoice.MainMenu:
-                ShowScreen(_menu);
-                break;
+            if (_host.Controls.Contains(_game))
+            {
+                ShowScreen(_pause);
+                return true;
+            }
 
-            default:    // Resume (also Esc, or closing the popup)
-                _game.Resume();
-                break;
+            if (_host.Controls.Contains(_pause))
+            {
+                ShowScreen(_game);
+                return true;
+            }
         }
+
+        return false;
     }
 
     // ------------------------------------------------------------------
@@ -176,6 +183,12 @@ public partial class MainForm : Form
 
         _game.LoadLevel(level);
         ShowScreen(_game);
+    }
+
+    private void RestartCurrentLevel()
+    {
+        if (_currentLevel != null)
+            StartLevel(_currentLevel, _currentIndex);
     }
 
     private void OnLevelCompleted()
