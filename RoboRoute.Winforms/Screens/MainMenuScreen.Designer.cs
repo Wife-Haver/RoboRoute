@@ -22,9 +22,9 @@ partial class MainMenuScreen
         btnPlay = new Button();
         btnQuit = new Button();
         btnShowSave = new Button();
-        btnHowToPlay = new Button();
-        btnAboutUs = new Button();
-        btnSettings = new Button();
+        //btnHowToPlay = new Button();
+        //btnAboutUs = new Button();
+        //btnSettings = new Button();
         picRobot = new PictureBox();
         ((System.ComponentModel.ISupportInitialize)picRobot).BeginInit();
         SuspendLayout();
@@ -52,17 +52,17 @@ partial class MainMenuScreen
         btnShowSave.Visible = false;
         btnShowSave.Click += btnShowSave_Click;
         //
-        // btnHowToPlay
-        //
-        ConfigureTransparentButton(btnHowToPlay, "How to Play");
-        //
-        // btnAboutUs
-        //
-        ConfigureTransparentButton(btnAboutUs, "About Us");
-        //
-        // btnSettings
-        //
-        ConfigureTransparentButton(btnSettings, "Settings");
+        //// btnHowToPlay
+        ////
+        //ConfigureTransparentButton(btnHowToPlay, "How to Play");
+        ////
+        //// btnAboutUs
+        ////
+        //ConfigureTransparentButton(btnAboutUs, "About Us");
+        ////
+        //// btnSettings
+        ////
+        //ConfigureTransparentButton(btnSettings, "Settings");
         //
         // picRobot
         //
@@ -78,9 +78,9 @@ partial class MainMenuScreen
         BackgroundImageLayout = ImageLayout.Stretch;
         Controls.Add(btnShowSave);
         Controls.Add(btnQuit);
-        Controls.Add(btnSettings);
-        Controls.Add(btnAboutUs);
-        Controls.Add(btnHowToPlay);
+        //Controls.Add(btnSettings);
+        //Controls.Add(btnAboutUs);
+        //Controls.Add(btnHowToPlay);
         Controls.Add(picRobot);
         Controls.Add(btnPlay);
         Name = "MainMenuScreen";
@@ -105,8 +105,8 @@ partial class MainMenuScreen
     private Button btnPlay;
     private Button btnQuit;
     private Button btnShowSave;
-    private Button btnHowToPlay;
-    private Button btnAboutUs;
-    private Button btnSettings;
+    //private Button btnHowToPlay;
+    //private Button btnAboutUs;
+    //private Button btnSettings;
     private PictureBox picRobot;
 }
