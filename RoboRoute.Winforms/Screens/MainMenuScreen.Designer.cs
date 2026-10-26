@@ -9,6 +9,8 @@ partial class MainMenuScreen
         if (disposing && (components != null))
         {
             components.Dispose();
+            _robotImage?.Dispose();
+            _backgroundImage?.Dispose();
         }
         base.Dispose(disposing);
     }
@@ -17,81 +19,94 @@ partial class MainMenuScreen
 
     private void InitializeComponent()
     {
-        lblTitle = new Label();
         btnPlay = new Button();
         btnQuit = new Button();
         btnShowSave = new Button();
+        btnHowToPlay = new Button();
+        btnAboutUs = new Button();
+        btnSettings = new Button();
+        picRobot = new PictureBox();
+        ((System.ComponentModel.ISupportInitialize)picRobot).BeginInit();
         SuspendLayout();
-        // 
-        // lblTitle
-        // 
-        lblTitle.Anchor = AnchorStyles.Top;
-        lblTitle.AutoSize = true;
-        lblTitle.Font = new Font("Segoe UI", 36F, FontStyle.Bold);
-        lblTitle.ForeColor = Color.White;
-        lblTitle.Location = new Point(480, 160);
-        lblTitle.Name = "lblTitle";
-        lblTitle.Size = new Size(350, 81);
-        lblTitle.TabIndex = 0;
-        lblTitle.Text = "RoboRoute";
-        // 
+        //
         // btnPlay
-        // 
-        btnPlay.Anchor = AnchorStyles.Top;
-        btnPlay.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
-        btnPlay.Location = new Point(480, 347);
-        btnPlay.Margin = new Padding(3, 4, 3, 4);
+        //
+        btnPlay.BackColor = Color.Transparent;
+        btnPlay.FlatAppearance.BorderSize = 0;
+        btnPlay.FlatAppearance.MouseDownBackColor = Color.Transparent;
+        btnPlay.FlatAppearance.MouseOverBackColor = Color.Transparent;
+        btnPlay.FlatStyle = FlatStyle.Flat;
         btnPlay.Name = "btnPlay";
-        btnPlay.Size = new Size(297, 80);
-        btnPlay.TabIndex = 1;
-        btnPlay.Text = "Play";
-        btnPlay.UseVisualStyleBackColor = true;
+        btnPlay.TabStop = true;
         btnPlay.Click += btnPlay_Click;
-        // 
+        //
         // btnQuit
-        // 
-        btnQuit.Anchor = AnchorStyles.Top;
-        btnQuit.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
-        btnQuit.Location = new Point(480, 453);
-        btnQuit.Margin = new Padding(3, 4, 3, 4);
+        //
         btnQuit.Name = "btnQuit";
-        btnQuit.Size = new Size(297, 80);
-        btnQuit.TabIndex = 2;
-        btnQuit.Text = "Quit";
-        btnQuit.UseVisualStyleBackColor = true;
+        btnQuit.Visible = false;
         btnQuit.Click += btnQuit_Click;
-        // 
+        //
         // btnShowSave
-        // 
-        btnShowSave.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-        btnShowSave.Location = new Point(16, 757);
+        //
         btnShowSave.Name = "btnShowSave";
-        btnShowSave.Size = new Size(119, 29);
-        btnShowSave.TabIndex = 3;
-        btnShowSave.Text = "Show Save FIle";
-        btnShowSave.UseVisualStyleBackColor = true;
+        btnShowSave.Visible = false;
         btnShowSave.Click += btnShowSave_Click;
-        // 
+        //
+        // btnHowToPlay
+        //
+        ConfigureTransparentButton(btnHowToPlay, "How to Play");
+        //
+        // btnAboutUs
+        //
+        ConfigureTransparentButton(btnAboutUs, "About Us");
+        //
+        // btnSettings
+        //
+        ConfigureTransparentButton(btnSettings, "Settings");
+        //
+        // picRobot
+        //
+        picRobot.BackColor = Color.Transparent;
+        picRobot.Name = "picRobot";
+        picRobot.SizeMode = PictureBoxSizeMode.Zoom;
+        picRobot.TabStop = false;
+        //
         // MainMenuScreen
         // 
-        AutoScaleDimensions = new SizeF(8F, 20F);
-        AutoScaleMode = AutoScaleMode.Font;
-        BackColor = Color.FromArgb(30, 30, 40);
+        AutoScaleMode = AutoScaleMode.None;
+        BackColor = Color.FromArgb(225, 235, 245);
+        BackgroundImageLayout = ImageLayout.Stretch;
         Controls.Add(btnShowSave);
         Controls.Add(btnQuit);
+        Controls.Add(btnSettings);
+        Controls.Add(btnAboutUs);
+        Controls.Add(btnHowToPlay);
+        Controls.Add(picRobot);
         Controls.Add(btnPlay);
-        Controls.Add(lblTitle);
-        Margin = new Padding(3, 4, 3, 4);
         Name = "MainMenuScreen";
-        Size = new Size(1257, 800);
+        Size = new Size(1440, 1024);
+        ((System.ComponentModel.ISupportInitialize)picRobot).EndInit();
         ResumeLayout(false);
-        PerformLayout();
+    }
+
+    private static void ConfigureTransparentButton(Button button, string accessibleName)
+    {
+        button.AccessibleName = accessibleName;
+        button.BackColor = Color.Transparent;
+        button.FlatAppearance.BorderSize = 0;
+        button.FlatAppearance.MouseDownBackColor = Color.Transparent;
+        button.FlatAppearance.MouseOverBackColor = Color.Transparent;
+        button.FlatStyle = FlatStyle.Flat;
+        button.TabStop = true;
     }
 
     #endregion
 
-    private Label lblTitle;
     private Button btnPlay;
     private Button btnQuit;
     private Button btnShowSave;
+    private Button btnHowToPlay;
+    private Button btnAboutUs;
+    private Button btnSettings;
+    private PictureBox picRobot;
 }
