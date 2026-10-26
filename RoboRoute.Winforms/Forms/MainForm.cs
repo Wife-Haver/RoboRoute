@@ -8,7 +8,7 @@ namespace RoboRoute.Winforms;
 
 // The window. It owns one screen at a time (main menu, level select or the game) and decides what
 // happens when a screen raises an event. All the "go to screen X" logic lives here, in one place.
-public partial class MainForm : Form
+public partial class MainForm : Form, IMessageFilter
 {
     private readonly Panel _host = new Panel();     // the current screen sits in here
     private readonly MainMenuScreen _menu = new MainMenuScreen();
@@ -34,6 +34,8 @@ public partial class MainForm : Form
         ClientSize = new Size(1280, 720);
         MinimumSize = new Size(900, 500);
         StartPosition = FormStartPosition.CenterScreen;
+        Application.AddMessageFilter(this);
+        FormClosed += (_, _) => Application.RemoveMessageFilter(this);
 
         _host.Dock = DockStyle.Fill;
         Controls.Add(_host);
@@ -150,6 +152,30 @@ public partial class MainForm : Form
     {
         if (_currentLevel != null)
             StartLevel(_currentLevel, _currentIndex);
+    }
+
+    public bool PreFilterMessage(ref Message message)
+    {
+        const int WmKeyDown = 0x0100;
+
+        if (message.Msg == WmKeyDown &&
+            message.WParam.ToInt32() == (int)Keys.Space &&
+            Form.ActiveForm == this)
+        {
+            if (_host.Controls.Contains(_game))
+            {
+                ShowScreen(_pause);
+                return true;
+            }
+
+            if (_host.Controls.Contains(_pause))
+            {
+                ShowScreen(_game);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void OnLevelCompleted()
