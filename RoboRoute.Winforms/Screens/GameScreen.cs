@@ -133,6 +133,9 @@ public class GameScreen : UserControl
 
         _levelPanel.Dock = DockStyle.Fill;
         _mainSplit.Panel1.Controls.Add(_levelPanel);
+        ConfigurePauseButton();
+        _levelPanel.Controls.Add(_pauseButton);
+        _pauseButton.BringToFront();
 
         _editorSplit.Dock = DockStyle.Fill;
         _editorSplit.Orientation = Orientation.Vertical;
@@ -145,9 +148,6 @@ public class GameScreen : UserControl
         _mainSplit.Panel2.Controls.Add(_editorSplit);
 
         Controls.Add(_mainSplit);
-        ConfigurePauseButton();
-        Controls.Add(_pauseButton);
-        _pauseButton.BringToFront();
 
         ResumeLayout(true);
     }
@@ -203,7 +203,11 @@ public class GameScreen : UserControl
 
     private void ConfigurePauseButton()
     {
-        string path = Path.Combine(AppContext.BaseDirectory, "Assets", "INTERFACE", "Vector.png");
+        string path = Path.Combine(
+            AppContext.BaseDirectory,
+            "Assets",
+            "INTERFACE",
+            "Vector-removebg-preview.png");
         if (File.Exists(path))
         {
             using Image source = Image.FromFile(path);
