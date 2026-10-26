@@ -32,7 +32,8 @@ public class GameScreen : UserControl
     private readonly Label _blockCounter = new Label();
     private readonly Label _statusLabel = new Label();
     private readonly Button _runButton = new Button();
-    
+    private readonly Button _pauseButton = new Button();
+
 
     private readonly System.Windows.Forms.Timer _timer = new System.Windows.Forms.Timer();
     private readonly Stopwatch _clock = new Stopwatch();
@@ -49,7 +50,7 @@ public class GameScreen : UserControl
     public event Action? LevelCompleted;
 
     // Raised when the player clicks the Menu button
-    public event Action? MenuRequested;
+    public event Action? PauseRequested;
 
     // Total blocks in the queue, invlcudingblocks inside Repeat blocks
     public int BlocksUsed => _runner.Queue.Sum(block => block.TotalBlocks());
@@ -208,16 +209,25 @@ public class GameScreen : UserControl
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
-        
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50f));   // pause button, last row
+
 
         layout.Controls.Add(MakeLabel("Blocks", HeaderFont), 0, 0);
 
         _paletteHost.Dock = DockStyle.Fill;
         _paletteHost.BackColor = Color.FromArgb(36, 28, 44);
-        _paletteHost.Margin = new Padding(0, 6, 0, 0);
+        _paletteHost.Margin = new Padding(0, 6, 0, 6);
+        
         layout.Controls.Add(_paletteHost, 0, 1);
 
-        
+        _pauseButton.Text = "PAUSE";
+        _pauseButton.Dock = DockStyle.Fill;
+        _pauseButton.Margin = new Padding(0);
+        _pauseButton.Font = ButtonFont;
+        StyleButton(_pauseButton, IdleColor);
+        _pauseButton.Click += (sender, e) => PauseRequested?.Invoke();
+        layout.Controls.Add(_pauseButton, 0, 2);
+
 
         return layout;
     }

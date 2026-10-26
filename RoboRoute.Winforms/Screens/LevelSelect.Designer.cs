@@ -17,14 +17,15 @@ partial class LevelSelect
 
     private void InitializeComponent()
     {
+        System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LevelSelect));
         lblTitle = new Label();
         flowLevels = new FlowLayoutPanel();
         btnBack = new Button();
-        openLevelDialog = new OpenFileDialog();
         SuspendLayout();
         // 
         // lblTitle
         // 
+        lblTitle.BackColor = Color.Transparent;
         lblTitle.Dock = DockStyle.Top;
         lblTitle.Font = new Font("Segoe UI", 24F, FontStyle.Bold);
         lblTitle.ForeColor = Color.White;
@@ -34,11 +35,13 @@ partial class LevelSelect
         lblTitle.TabIndex = 0;
         lblTitle.Text = "Select a level";
         lblTitle.TextAlign = ContentAlignment.MiddleCenter;
+        lblTitle.Click += lblTitle_Click;
         // 
         // flowLevels
         // 
         flowLevels.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
         flowLevels.AutoScroll = true;
+        flowLevels.BackColor = Color.Transparent;
         flowLevels.Location = new Point(69, 133);
         flowLevels.Margin = new Padding(3, 4, 3, 4);
         flowLevels.Name = "flowLevels";
@@ -58,17 +61,12 @@ partial class LevelSelect
         btnBack.UseVisualStyleBackColor = true;
         btnBack.Click += btnBack_Click;
         // 
-        // openLevelDialog
-        // 
-        openLevelDialog.Filter = "Level files (*.txt)|*.txt|All files (*.*)|*.*";
-        openLevelDialog.Title = "Import a level";
-        openLevelDialog.FileOk += openFileDialog1_FileOk;
-        // 
         // LevelSelect
         // 
         AutoScaleDimensions = new SizeF(8F, 20F);
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = Color.FromArgb(30, 30, 40);
+        BackgroundImage = (Image)resources.GetObject("$this.BackgroundImage");
         Controls.Add(btnBack);
         Controls.Add(flowLevels);
         Controls.Add(lblTitle);
@@ -83,5 +81,4 @@ partial class LevelSelect
     private Label lblTitle;
     private FlowLayoutPanel flowLevels;
     private Button btnBack;
-    private OpenFileDialog openLevelDialog;
 }

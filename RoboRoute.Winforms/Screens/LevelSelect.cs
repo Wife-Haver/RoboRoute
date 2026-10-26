@@ -62,6 +62,11 @@ public partial class LevelSelect : UserControl
 
     }
 
+    private void lblTitle_Click(object sender, EventArgs e)
+    {
+
+    }
+
     public event Action<string>? LevelFileChosen;
 
 }

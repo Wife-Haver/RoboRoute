@@ -49,7 +49,7 @@ public partial class MainForm : Form
         _levelSelect.LevelChosen += index => StartLevel(Levels.All[index], index);
         _levelSelect.BackClicked += () => ShowScreen(_menu);
 
-        _game.MenuRequested += () => ShowScreen(_menu);
+        _game.PauseRequested += ShowPauseMenu;
         _game.LevelCompleted += OnLevelCompleted;
 
         ShowScreen(_menu);
@@ -59,6 +59,43 @@ public partial class MainForm : Form
             if (_startupMessage != null)
                 MessageBox.Show(this, _startupMessage, "Problem loading", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         };
+    }
+    // Esc on the game screen opens the pause menu
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == Keys.Escape && _currentLevel != null && _host.Controls.Contains(_game))
+        {
+            ShowPauseMenu();
+            return true;
+        }
+        return base.ProcessCmdKey(ref msg, keyData);
+    }
+
+    private void ShowPauseMenu()
+    {
+        _game.Pause();      // freezes the robot and the timer while the popup is open
+
+        using var pause = new PauseForm();
+        pause.ShowDialog(this);
+
+        switch (pause.Choice)
+        {
+            case PauseChoice.Restart:
+                StartLevel(_currentLevel!, _currentIndex);
+                break;
+
+            case PauseChoice.LevelSelect:
+                ShowLevelSelect();
+                break;
+
+            case PauseChoice.MainMenu:
+                ShowScreen(_menu);
+                break;
+
+            default:    // Resume (also Esc, or closing the popup)
+                _game.Resume();
+                break;
+        }
     }
 
     // ------------------------------------------------------------------
