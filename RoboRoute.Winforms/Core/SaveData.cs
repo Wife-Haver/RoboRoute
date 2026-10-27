@@ -9,7 +9,7 @@ namespace RoboRoute.Winforms.Core;
 //   - a level has been beaten if it has a score
 //   - level N+1 is unlocked once level N has been beaten
 //
-// File location: %AppData%\RoboRoute\progress.txt (outside the project, so it isn't committed to git)
+// File location: %AppData%\RoboRoute\progress.txt 
 // File format, one line per beaten level:
 //
 //   First Steps=7

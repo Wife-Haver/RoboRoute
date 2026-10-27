@@ -22,6 +22,7 @@ partial class LevelSelect
         flowLevels = new FlowLayoutPanel();
         btnBack = new Button();
         HowToPlayBtn = new Button();
+        ShowSaveBtn = new Button();
         SuspendLayout();
         // 
         // lblTitle
@@ -72,12 +73,24 @@ partial class LevelSelect
         HowToPlayBtn.UseVisualStyleBackColor = true;
         HowToPlayBtn.Click += HowToPlayBtn_Click;
         // 
+        // ShowSaveBtn
+        // 
+        ShowSaveBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        ShowSaveBtn.Location = new Point(1160, 12);
+        ShowSaveBtn.Name = "ShowSaveBtn";
+        ShowSaveBtn.Size = new Size(94, 29);
+        ShowSaveBtn.TabIndex = 4;
+        ShowSaveBtn.Text = "Show Save";
+        ShowSaveBtn.UseVisualStyleBackColor = true;
+        ShowSaveBtn.Click += ShowSaveBtn_Click;
+        // 
         // LevelSelect
         // 
         AutoScaleDimensions = new SizeF(8F, 20F);
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = Color.FromArgb(30, 30, 40);
         BackgroundImage = (Image)resources.GetObject("$this.BackgroundImage");
+        Controls.Add(ShowSaveBtn);
         Controls.Add(HowToPlayBtn);
         Controls.Add(btnBack);
         Controls.Add(flowLevels);
@@ -94,4 +107,5 @@ partial class LevelSelect
     private FlowLayoutPanel flowLevels;
     private Button btnBack;
     private Button HowToPlayBtn;
+    private Button ShowSaveBtn;
 }

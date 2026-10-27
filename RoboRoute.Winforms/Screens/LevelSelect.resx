@@ -121,7 +121,7 @@
   <data name="HowToPlayBtn.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAL
-        EAAACxABrSO9dQAAAXZJREFUWEftlL8rRlEYxz9+FK8ByWbQWwaFgcUmxWLQy+Y/YDOYZDLYzYpZFiUG
+        DgAACw4BQL7hQQAAAXZJREFUWEftlL8rRlEYxz9+FK8ByWbQWwaFgcUmxWLQy+Y/YDOYZDLYzYpZFiUG
         k2SRxWAis/zIr4RBoae+p25P3uS8976K+6mne55vz697zr0HcnJ+ziiwBpwBzzJbrwIjPjhNisAB8PGN
         7QGdPrlSeoBrNbgA5oFeoEnWBywAV4qxZ7cvEksBOFfhbaDFByRoA3YVewo0+oAY5lTwGGiQVgL2gXvg
         TmvTDBv4RDmziTrRHKnYuPwZ4P2LszdtWjGT0g4TdaJ5VLGw9eGc7e1aZbY27VIxppn/kKgTTXjDcr7R
@@ -136,7 +136,7 @@
   <data name="$this.BackgroundImage" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAABaAAAAQACAYAAAAXy/6SAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAL
-        DgAACw4BQL7hQQAAAA50RVh0U29mdHdhcmUARmlnbWGesZZjAAD/mElEQVR4Xuz927Mty1XmCeqfTpB0
+        DAAACwwBP0AiyAAAAA50RVh0U29mdHdhcmUARmlnbWGesZZjAAD/mElEQVR4Xuz927Mty1XmCeqfTpB0
         dCQkAUll3f4M6EqKrAIJiTsI5aWf4CVJS+rlnG3dZoA10NZlh/O42zwihsfnv/jGcI+55tp7bUwPn0X4
         uLkPv0TM+S1fPr/x+Z9/9f4X+AV+gV/gF/gFfoFf4Bf4BX6BX+AX+AV+gV/gF/gFfoFf4Bf4BZ6Nb3z7
         z/7l/bf+9Kv3cY17B+q++Xtfbvjl3/1iv//dvXy5N2g+3/q9d4M/rw6ZLmItQdr2S7/1Vxc0uatnyNPk
