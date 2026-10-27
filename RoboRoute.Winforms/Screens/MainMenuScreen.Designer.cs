@@ -20,67 +20,39 @@ partial class MainMenuScreen
     private void InitializeComponent()
     {
         btnPlay = new Button();
-        btnQuit = new Button();
-        btnShowSave = new Button();
-        //btnHowToPlay = new Button();
-        //btnAboutUs = new Button();
-        //btnSettings = new Button();
         picRobot = new PictureBox();
         ((System.ComponentModel.ISupportInitialize)picRobot).BeginInit();
         SuspendLayout();
-        //
+        // 
         // btnPlay
-        //
+        // 
         btnPlay.BackColor = Color.Transparent;
         btnPlay.FlatAppearance.BorderSize = 0;
         btnPlay.FlatAppearance.MouseDownBackColor = Color.Transparent;
         btnPlay.FlatAppearance.MouseOverBackColor = Color.Transparent;
         btnPlay.FlatStyle = FlatStyle.Flat;
+        btnPlay.Location = new Point(0, 0);
         btnPlay.Name = "btnPlay";
-        btnPlay.TabStop = true;
+        btnPlay.Size = new Size(75, 23);
+        btnPlay.TabIndex = 3;
+        btnPlay.UseVisualStyleBackColor = false;
         btnPlay.Click += btnPlay_Click;
-        //
-        // btnQuit
-        //
-        btnQuit.Name = "btnQuit";
-        btnQuit.Visible = false;
-        btnQuit.Click += btnQuit_Click;
-        //
-        // btnShowSave
-        //
-        btnShowSave.Name = "btnShowSave";
-        btnShowSave.Visible = false;
-        btnShowSave.Click += btnShowSave_Click;
-        //
-        //// btnHowToPlay
-        ////
-        //ConfigureTransparentButton(btnHowToPlay, "How to Play");
-        ////
-        //// btnAboutUs
-        ////
-        //ConfigureTransparentButton(btnAboutUs, "About Us");
-        ////
-        //// btnSettings
-        ////
-        //ConfigureTransparentButton(btnSettings, "Settings");
-        //
+        // 
         // picRobot
-        //
+        // 
         picRobot.BackColor = Color.Transparent;
+        picRobot.Location = new Point(0, 0);
         picRobot.Name = "picRobot";
+        picRobot.Size = new Size(100, 50);
         picRobot.SizeMode = PictureBoxSizeMode.Zoom;
+        picRobot.TabIndex = 2;
         picRobot.TabStop = false;
-        //
+        // 
         // MainMenuScreen
         // 
         AutoScaleMode = AutoScaleMode.None;
         BackColor = Color.FromArgb(225, 235, 245);
         BackgroundImageLayout = ImageLayout.Stretch;
-        Controls.Add(btnShowSave);
-        Controls.Add(btnQuit);
-        //Controls.Add(btnSettings);
-        //Controls.Add(btnAboutUs);
-        //Controls.Add(btnHowToPlay);
         Controls.Add(picRobot);
         Controls.Add(btnPlay);
         Name = "MainMenuScreen";
@@ -103,10 +75,7 @@ partial class MainMenuScreen
     #endregion
 
     private Button btnPlay;
-    private Button btnQuit;
-    private Button btnShowSave;
-    //private Button btnHowToPlay;
-    //private Button btnAboutUs;
-    //private Button btnSettings;
+
+
     private PictureBox picRobot;
 }

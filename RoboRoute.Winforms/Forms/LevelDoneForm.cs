@@ -7,11 +7,7 @@ public enum LevelDoneChoice
     NextLevel
 }
 
-// The "Level done" popup. The look is designed in the Visual Studio designer (LevelDoneForm.Designer.cs).
-// MainForm shows it with ShowDialog and then reads Choice to see which button was clicked.
-//
-// To redesign it: keep the buttons named btnRestart, btnMenu and btnNext, and the label lblTitle
-// (or change the handlers below to match your names).
+// popup for finishing level
 public partial class LevelDoneForm : Form
 {
     public LevelDoneChoice Choice { get; private set; } = LevelDoneChoice.Restart;

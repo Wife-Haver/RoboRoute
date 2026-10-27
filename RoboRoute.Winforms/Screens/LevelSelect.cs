@@ -1,11 +1,8 @@
 namespace RoboRoute.Winforms.Screens;
 
-// The level select screen. The title, the Back button and the panel that holds the level buttons are
-// designed in the Visual Studio designer; the level buttons themselves are created in code, one per level,
-// so adding a level to Levels.cs adds a button automatically.
-//
-// To redesign it: keep a container named flowLevels (a FlowLayoutPanel works well) and a button named btnBack.
 
+
+//this file is for the level select screenn
 
 public partial class LevelSelect : UserControl
 {
@@ -18,7 +15,9 @@ public partial class LevelSelect : UserControl
         InitializeComponent();
     }
 
-    // Makes one button per level name
+
+
+    // Makes one button per level 
     public record LevelEntry(string Name, bool Unlocked, int? BestBlocks);
 
     public void SetLevels(IReadOnlyList<LevelEntry> levels)
@@ -57,16 +56,13 @@ public partial class LevelSelect : UserControl
 
     private void btnBack_Click(object? sender, EventArgs e) => BackClicked?.Invoke();
 
-    private void openFileDialog1_FileOk(object sender, System.ComponentModel.CancelEventArgs e)
-    {
 
+    private void HowToPlayBtn_Click(object sender, EventArgs e)
+    {
+        using var help = new HowToPlayForm();
+        help.ShowDialog(this);
     }
 
-    private void lblTitle_Click(object sender, EventArgs e)
-    {
-
-    }
-
-    public event Action<string>? LevelFileChosen;
+    
 
 }

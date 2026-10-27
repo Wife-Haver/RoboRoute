@@ -21,6 +21,7 @@ partial class LevelSelect
         lblTitle = new Label();
         flowLevels = new FlowLayoutPanel();
         btnBack = new Button();
+        HowToPlayBtn = new Button();
         SuspendLayout();
         // 
         // lblTitle
@@ -35,7 +36,6 @@ partial class LevelSelect
         lblTitle.TabIndex = 0;
         lblTitle.Text = "Select a level";
         lblTitle.TextAlign = ContentAlignment.MiddleCenter;
-        lblTitle.Click += lblTitle_Click;
         // 
         // flowLevels
         // 
@@ -61,12 +61,24 @@ partial class LevelSelect
         btnBack.UseVisualStyleBackColor = true;
         btnBack.Click += btnBack_Click;
         // 
+        // HowToPlayBtn
+        // 
+        HowToPlayBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+        HowToPlayBtn.Image = (Image)resources.GetObject("HowToPlayBtn.Image");
+        HowToPlayBtn.Location = new Point(1121, 713);
+        HowToPlayBtn.Name = "HowToPlayBtn";
+        HowToPlayBtn.Size = new Size(56, 60);
+        HowToPlayBtn.TabIndex = 3;
+        HowToPlayBtn.UseVisualStyleBackColor = true;
+        HowToPlayBtn.Click += HowToPlayBtn_Click;
+        // 
         // LevelSelect
         // 
         AutoScaleDimensions = new SizeF(8F, 20F);
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = Color.FromArgb(30, 30, 40);
         BackgroundImage = (Image)resources.GetObject("$this.BackgroundImage");
+        Controls.Add(HowToPlayBtn);
         Controls.Add(btnBack);
         Controls.Add(flowLevels);
         Controls.Add(lblTitle);
@@ -81,4 +93,5 @@ partial class LevelSelect
     private Label lblTitle;
     private FlowLayoutPanel flowLevels;
     private Button btnBack;
+    private Button HowToPlayBtn;
 }

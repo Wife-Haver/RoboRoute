@@ -71,23 +71,6 @@ public partial class MainMenuScreen : UserControl
             ClientSize.Width * 590 / DesignWidth,
             ClientSize.Height * 350 / DesignHeight);
 
-        //btnHowToPlay.SetBounds(
-        //    ClientSize.Width * 890 / DesignWidth,
-        //    ClientSize.Height * 15 / DesignHeight,
-        //    ClientSize.Width * 260 / DesignWidth,
-        //    ClientSize.Height * 70 / DesignHeight);
-
-        //btnAboutUs.SetBounds(
-        //    ClientSize.Width * 1160 / DesignWidth,
-        //    ClientSize.Height * 15 / DesignHeight,
-        //    ClientSize.Width * 155 / DesignWidth,
-        //    ClientSize.Height * 70 / DesignHeight);
-
-        //btnSettings.SetBounds(
-        //    ClientSize.Width * 1325 / DesignWidth,
-        //    ClientSize.Height * 10 / DesignHeight,
-        //    ClientSize.Width * 75 / DesignWidth,
-        //    ClientSize.Height * 75 / DesignHeight);
     }
 
     private void btnShowSave_Click(object sender, EventArgs e)
